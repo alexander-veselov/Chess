@@ -1,10 +1,11 @@
 #pragma once
 
+#include "application.h"
+
+#include <memory>
+
 namespace chess {
 
-class Chess {
- public:
-  static const char* Hello();
-};
+std::shared_ptr<Application> CreateApplication();
 
 };  // namespace chess
