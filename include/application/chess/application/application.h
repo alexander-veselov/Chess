@@ -2,16 +2,16 @@
 
 #include "layer.h"
 
-#include <vector>
-#include <string>
 #include <memory>
+#include <string>
+#include <vector>
 
 struct GLFWwindow;
 
 namespace chess {
 
 class Application {
- public:
+public:
   struct Specification {
     std::string name;
     uint32_t width;
@@ -24,10 +24,10 @@ class Application {
 
   void PushLayer(const std::shared_ptr<Layer>& layer);
 
- private:
+private:
   Specification specification_;
   GLFWwindow* window_handle_;
   std::vector<std::shared_ptr<Layer>> layer_stack_;
 };
 
-}  // namespace chess
+} // namespace chess

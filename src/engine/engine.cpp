@@ -6,4 +6,4 @@ void EngineDummy() {
   return;
 }
 
-}
+} // namespace chess

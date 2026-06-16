@@ -6,4 +6,4 @@ void GameDummy() {
   return;
 }
 
-}
+} // namespace chess

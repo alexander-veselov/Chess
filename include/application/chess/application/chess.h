@@ -8,4 +8,4 @@ namespace chess {
 
 std::shared_ptr<Application> CreateApplication();
 
-};  // namespace chess
+}; // namespace chess

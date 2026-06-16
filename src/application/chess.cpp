@@ -5,7 +5,7 @@
 namespace chess {
 
 class ExampleLayer : public chess::Layer {
- public:
+public:
   virtual void OnUIRender() override {
     ImGui::Begin("Hello");
     ImGui::Button("Button");
@@ -26,4 +26,4 @@ std::shared_ptr<Application> CreateApplication() {
   return application;
 }
 
-}  // namespace chess
+} // namespace chess
