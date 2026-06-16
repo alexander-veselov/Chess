@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(imgui CONFIG REQUIRED)
+find_package(lunasvg CONFIG REQUIRED)
 
 # Engine library
 set(ENGINE_INCLUDE_FOLDER "include/engine")
@@ -31,6 +32,6 @@ file(GLOB APPLICATION_HEADERS ${APPLICATION_INCLUDE_FOLDER}/chess/application/*.
 file(GLOB APPLICATION_SOURCES ${APPLICATION_SOURCE_FOLDER}/*.cpp)
 add_executable(Application ${APPLICATION_HEADERS} ${APPLICATION_SOURCES})
 target_include_directories(Application PUBLIC ${APPLICATION_INCLUDE_FOLDER})
-target_link_libraries(Application PRIVATE imgui::imgui)
+target_link_libraries(Application PRIVATE imgui::imgui lunasvg::lunasvg)
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Application)
