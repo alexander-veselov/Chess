@@ -4,7 +4,7 @@
       "name": "imgui",
       "features": [
         "glfw-binding",
-        "vulkan-binding"
+        "opengl3-binding"
       ]
     },
     "lunasvg"
