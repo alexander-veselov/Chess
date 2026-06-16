@@ -85,6 +85,8 @@ Application::Application(const Specification& specification)
   io.ConfigFlags |=
       ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
 
+  io.IniFilename = nullptr;
+
   // Setup Dear ImGui style
   ImGui::StyleColorsDark();
   // ImGui::StyleColorsLight();
