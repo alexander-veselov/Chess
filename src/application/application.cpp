@@ -1,4 +1,4 @@
-#include "application.h"
+#include "chess/application/application.h"
 
 #include <stdio.h>   // printf, fprintf
 #include <stdlib.h>  // abort

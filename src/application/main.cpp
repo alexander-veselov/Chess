@@ -1,4 +1,4 @@
-#include "chess.h"
+#include "chess/application/chess.h"
 
 int main() {
   auto application = chess::CreateApplication();

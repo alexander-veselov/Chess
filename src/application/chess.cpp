@@ -1,4 +1,5 @@
-#include "chess.h"
+#include "chess/application/chess.h"
+
 #include "imgui.h"
 
 namespace chess {
