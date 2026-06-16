@@ -9,3 +9,8 @@ NamespaceIndentation: None
 
 PointerAlignment: Left
 AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortBlocksOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+InsertBraces: true

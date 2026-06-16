@@ -1,4 +1,6 @@
 #include "chess/application/chess.h"
+#include "chess/application/texture.h"
+
 #include "imgui.h"
 
 namespace chess {
@@ -46,11 +48,18 @@ private:
     }
 
     DrawPieces(draw_list, origin);
-
-    ImGui::Dummy(ImVec2(CellSize * BoardSize, CellSize * BoardSize));
   }
 
   void DrawPieces(ImDrawList* draw_list, ImVec2 origin) {
+    static GLuint tex = 0;
+    static bool init = false;
+
+    if (!init) {
+      LoadTextureFromSVG("assets/Chess_bdt45.svg", &tex, CellSize, CellSize);
+      init = true;
+    }
+
+    ImGui::Image((ImTextureID)(intptr_t)tex, ImVec2(CellSize, CellSize));
   }
 };
 
