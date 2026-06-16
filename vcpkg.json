@@ -7,7 +7,6 @@
         "opengl3-binding"
       ]
     },
-    "lunasvg",
-    "stb"
+    "lunasvg"
   ]
 }

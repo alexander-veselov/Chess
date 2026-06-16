@@ -55,7 +55,7 @@ private:
     static bool init = false;
 
     if (!init) {
-      LoadTextureFromSVG("assets/Chess_bdt45.svg", &tex, CellSize, CellSize);
+      LoadTextureFromSVG(tex, "assets/Chess_bdt45.svg", CellSize, CellSize);
       init = true;
     }
 

@@ -6,7 +6,7 @@ typedef unsigned int GLuint;
 
 namespace chess {
 
-bool LoadTextureFromSVG(const std::string& file, GLuint* out_texture, int width,
+bool LoadTextureFromSVG(GLuint& out_texture, const std::string& file, int width,
                         int height);
 
 } // namespace chess

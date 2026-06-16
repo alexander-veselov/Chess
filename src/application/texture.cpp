@@ -1,16 +1,12 @@
 #include "chess/application/texture.h"
 
 #include <GLFW/glfw3.h>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 #include <lunasvg.h>
 
 namespace chess {
 
-bool LoadTextureFromSVG(const std::string& file, GLuint* out_texture, int width,
-                        int height) {
+bool LoadTextureFromSVG(GLuint& out_texture, const std::string& file,
+                        int width, int height) {
 
   auto document = lunasvg::Document::loadFromFile(file);
   if (!document) {
@@ -27,8 +23,8 @@ bool LoadTextureFromSVG(const std::string& file, GLuint* out_texture, int width,
 
   const unsigned char* pixels = bitmap.data();
 
-  glGenTextures(1, out_texture);
-  glBindTexture(GL_TEXTURE_2D, *out_texture);
+  glGenTextures(1, &out_texture);
+  glBindTexture(GL_TEXTURE_2D, out_texture);
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
