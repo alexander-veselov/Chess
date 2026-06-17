@@ -11,31 +11,31 @@ static Board CreateDefaultBoard() {
     }
   }
 
-  board[0][0] = Piece::kBlackRook;
-  board[0][1] = Piece::kBlackKnight;
-  board[0][2] = Piece::kBlackBishop;
-  board[0][3] = Piece::kBlackQueen;
-  board[0][4] = Piece::kBlackKing;
-  board[0][5] = Piece::kBlackBishop;
-  board[0][6] = Piece::kBlackKnight;
-  board[0][7] = Piece::kBlackRook;
+  board[_8][_A] = Piece::kBlackRook;
+  board[_8][_B] = Piece::kBlackKnight;
+  board[_8][_C] = Piece::kBlackBishop;
+  board[_8][_D] = Piece::kBlackQueen;
+  board[_8][_E] = Piece::kBlackKing;
+  board[_8][_F] = Piece::kBlackBishop;
+  board[_8][_G] = Piece::kBlackKnight;
+  board[_8][_H] = Piece::kBlackRook;
 
   for (auto i = 0; i < kBoardSize; ++i) {
-    board[1][i] = Piece::kBlackPawn;
+    board[_7][i] = Piece::kBlackPawn;
   }
 
   for (auto i = 0; i < kBoardSize; ++i) {
-    board[6][i] = Piece::kWhitePawn;
+    board[_2][i] = Piece::kWhitePawn;
   }
 
-  board[7][0] = Piece::kWhiteRook;
-  board[7][1] = Piece::kWhiteKnight;
-  board[7][2] = Piece::kWhiteBishop;
-  board[7][3] = Piece::kWhiteQueen;
-  board[7][4] = Piece::kWhiteKing;
-  board[7][5] = Piece::kWhiteBishop;
-  board[7][6] = Piece::kWhiteKnight;
-  board[7][7] = Piece::kWhiteRook;
+  board[_1][_A] = Piece::kWhiteRook;
+  board[_1][_B] = Piece::kWhiteKnight;
+  board[_1][_C] = Piece::kWhiteBishop;
+  board[_1][_D] = Piece::kWhiteQueen;
+  board[_1][_E] = Piece::kWhiteKing;
+  board[_1][_F] = Piece::kWhiteBishop;
+  board[_1][_G] = Piece::kWhiteKnight;
+  board[_1][_H] = Piece::kWhiteRook;
 
   return board;
 }
@@ -50,6 +50,13 @@ Game::Game(const State& state)
 
 const State& Game::GetState() const {
   return state_;
+}
+
+bool Game::Move(Square from, Square to) {
+  auto& board = state_.board;
+  board[to.rank][to.file] = board[from.rank][from.file];
+  board[from.rank][from.file] = Piece::kNone;
+  return true;
 }
 
 } // namespace chess

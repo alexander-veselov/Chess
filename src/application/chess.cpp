@@ -4,6 +4,7 @@
 #include "chess/core/board.h"
 #include "chess/game/game.h"
 
+#include <optional>
 #include <unordered_map>
 
 #include "imgui.h"
@@ -11,7 +12,6 @@
 namespace chess {
 
 static constexpr float CellSize = 200.0f;
-
 
 class ExampleLayer : public chess::Layer {
 public:
@@ -25,23 +25,52 @@ public:
                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                      ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
 
-    static auto game = Game{};
-    DrawBoard(game.GetState().board_);
+    static Game game{};
+    static std::optional<Square> selected;
+
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    ImVec2 origin = ImGui::GetCursorScreenPos();
+
+    HandleInput(game, selected, origin);
+    DrawBoard(draw_list, game.GetState().board, origin, selected);
 
     ImGui::End();
-
     ImGui::PopStyleVar();
   }
 
 private:
-  void DrawBoard(const Board& board) {
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    ImVec2 origin = ImGui::GetCursorScreenPos();
+  void HandleInput(Game& game, std::optional<Square>& selected,
+                   const ImVec2& origin) {
+    if (!ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+      return;
+    }
 
+    ImVec2 mouse = ImGui::GetMousePos();
+    Square sq = ScreenToSquare(origin, mouse);
+
+    if (!IsValidSquare(sq)) {
+      return;
+    }
+
+    const Board& board = game.GetState().board;
+    Piece p = board[sq.rank][sq.file];
+
+    if (!selected) {
+      if (p != Piece::kNone) {
+        selected = sq;
+      }
+    } else {
+      game.Move(*selected, sq);
+      selected.reset();
+    }
+  }
+
+  void DrawBoard(ImDrawList* draw_list, const Board& board,
+                 const ImVec2& origin, const std::optional<Square>& selected) {
     for (int y = 0; y < kBoardSize; y++) {
       for (int x = 0; x < kBoardSize; x++) {
-
         ImVec2 p0(origin.x + x * CellSize, origin.y + y * CellSize);
+
         ImVec2 p1(p0.x + CellSize, p0.y + CellSize);
 
         bool dark = (x + y) % 2 == 1;
@@ -50,6 +79,10 @@ private:
             dark ? IM_COL32(118, 150, 86, 255) : IM_COL32(238, 238, 210, 255);
 
         draw_list->AddRectFilled(p0, p1, color);
+
+        if (selected && selected->file == x && selected->rank == y) {
+          draw_list->AddRectFilled(p0, p1, IM_COL32(255, 255, 0, 80));
+        }
       }
     }
 
@@ -59,7 +92,6 @@ private:
   void DrawPieces(ImDrawList* draw_list, const ImVec2& origin,
                   const Board& board) {
 
-    // TODO: create proper texture manager and load texture after proper opengl3 init
     static std::unordered_map<Piece, GLuint> kTextures{
       {Piece::kWhiteKing,   LoadTextureFromSVG("assets/Chess_klt45.svg", CellSize, CellSize)},
       {Piece::kWhiteQueen,  LoadTextureFromSVG("assets/Chess_qlt45.svg", CellSize, CellSize)},
@@ -78,7 +110,6 @@ private:
     for (int y = 0; y < kBoardSize; y++) {
       for (int x = 0; x < kBoardSize; x++) {
         Piece p = board[y][x];
-
         if (p == Piece::kNone) {
           continue;
         }
@@ -88,12 +119,24 @@ private:
           continue;
         }
 
-        ImVec2 pos = ImVec2(origin.x + x * CellSize, origin.y + y * CellSize);
+        ImVec2 pos(origin.x + x * CellSize, origin.y + y * CellSize);
 
         draw_list->AddImage((ImTextureID)(intptr_t)it->second, pos,
                             ImVec2(pos.x + CellSize, pos.y + CellSize));
       }
     }
+  }
+
+  Square ScreenToSquare(const ImVec2& origin, const ImVec2& mouse) {
+    int x = (int)((mouse.x - origin.x) / CellSize);
+    int y = (int)((mouse.y - origin.y) / CellSize);
+
+    return Square{static_cast<Rank>(y), static_cast<File>(x)};
+  }
+
+  bool IsValidSquare(const Square& s) {
+    return s.file >= 0 && s.file < kBoardSize && s.rank >= 0 &&
+           s.rank < kBoardSize;
   }
 };
 

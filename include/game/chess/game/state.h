@@ -5,7 +5,7 @@
 namespace chess {
 
 struct State {
-  Board board_;
+  Board board;
 };
 
 } // namespace chess

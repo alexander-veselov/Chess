@@ -10,6 +10,7 @@ public:
   Game(const State& state);
 
   const State& GetState() const;
+  bool Move(Square from, Square to);
 
 private:
   State state_;
