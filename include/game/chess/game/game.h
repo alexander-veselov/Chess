@@ -1,7 +1,18 @@
 #pragma once
 
+#include "chess/game/state.h"
+
 namespace chess {
 
-void GameDummy();
+class Game {
+public:
+  Game();
+  Game(const State& state);
+
+  const State& GetState() const;
+
+private:
+  State state_;
+};
 
 }
