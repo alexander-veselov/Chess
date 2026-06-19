@@ -20,4 +20,12 @@ enum class Piece : uint8_t {
   kBlackPawn
 };
 
+enum class Color {
+  kNone,
+  kWhite,
+  kBlack
+};
+
+Color GetPieceColor(Piece piece);
+
 }

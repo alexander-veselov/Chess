@@ -32,7 +32,7 @@ public:
     ImVec2 origin = ImGui::GetCursorScreenPos();
 
     HandleInput(game, selected, origin);
-    DrawBoard(draw_list, game.GetState().board, origin, selected);
+    DrawBoard(draw_list, game, origin, selected);
 
     ImGui::End();
     ImGui::PopStyleVar();
@@ -65,7 +65,7 @@ private:
     }
   }
 
-  void DrawBoard(ImDrawList* draw_list, const Board& board,
+  void DrawBoard(ImDrawList* draw_list, Game& game,
                  const ImVec2& origin, const std::optional<Square>& selected) {
     for (int y = 0; y < kBoardSize; y++) {
       for (int x = 0; x < kBoardSize; x++) {
@@ -79,14 +79,24 @@ private:
             dark ? IM_COL32(118, 150, 86, 255) : IM_COL32(238, 238, 210, 255);
 
         draw_list->AddRectFilled(p0, p1, color);
-
-        if (selected && selected->file == x && selected->rank == y) {
-          draw_list->AddRectFilled(p0, p1, IM_COL32(255, 255, 0, 80));
-        }
       }
     }
 
-    DrawPieces(draw_list, origin, board);
+    if (selected) {
+      ImVec2 p0(origin.x + selected->file * CellSize,
+                origin.y + selected->rank * CellSize);
+      ImVec2 p1(p0.x + CellSize, p0.y + CellSize);
+      for (const auto move :
+            game.GetLegalMoves({selected->rank, selected->file})) {
+        ImVec2 p3(origin.x + move.file * CellSize + CellSize / 2,
+                  origin.y + move.rank * CellSize + CellSize / 2);
+        draw_list->AddCircleFilled(p3, CellSize / 6,
+                                    IM_COL32(0, 0, 0, 160));
+      }
+      draw_list->AddRectFilled(p0, p1, IM_COL32(255, 255, 0, 80));
+    }
+
+    DrawPieces(draw_list, origin, game.GetState().board);
   }
 
   void DrawPieces(ImDrawList* draw_list, const ImVec2& origin,
