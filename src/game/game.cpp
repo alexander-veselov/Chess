@@ -42,7 +42,7 @@ static Board CreateDefaultBoard() {
 
 static bool IsValidSquare(Square square) {
   return File::_A <= square.file && square.file <= File::_H &&
-         Rank::_8 <= square.rank && square.rank <= Rank::_1;
+         Rank::_1 <= square.rank && square.rank <= Rank::_8;
 }
 
 static bool PushIfValid(std::vector<Square>& moves, Square square) {
@@ -147,7 +147,7 @@ static void GetPawnMoves(const State& state, Square square,
                          std::vector<Square>& moves) {
   // TODO: finish capture and en-passant
   const auto color = GetPieceColor(state.board[square.rank][square.file]);
-  const auto direction = color == Color::kWhite ? -1 : 1;
+  const auto direction = color == Color::kWhite ? 1 : -1;
   const auto defaultRank = color == Color::kWhite ? Rank::_2 : Rank::_7;
   PushIfValid(moves, Square{(Rank)(square.rank + direction), square.file});
   if (square.rank == defaultRank) {
@@ -157,13 +157,11 @@ static void GetPawnMoves(const State& state, Square square,
 }
 
 Game::Game()
-  : state_{State{CreateDefaultBoard()}},
-    turn_{Color::kWhite} {
+  : state_{State{CreateDefaultBoard(), Color::kWhite}} {
 }
 
-Game::Game(const State& state, Color turn)
-  : state_{state},
-    turn_{turn} {
+Game::Game(const State& state)
+  : state_{state} {
 }
 
 const State& Game::GetState() const {

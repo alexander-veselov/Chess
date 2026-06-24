@@ -9,7 +9,7 @@ namespace chess {
 class Game {
 public:
   Game();
-  Game(const State& state, Color turn);
+  Game(const State& state);
 
   const State& GetState() const;
   bool Move(Square from, Square to);
@@ -17,7 +17,6 @@ public:
 
 private:
   State state_;
-  Color turn_;
 };
 
 }

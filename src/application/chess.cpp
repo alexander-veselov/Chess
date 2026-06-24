@@ -11,7 +11,8 @@
 
 namespace chess {
 
-static constexpr float CellSize = 200.0f;
+static constexpr auto CellSize = 200.0f;
+static constexpr auto PlayerView = Color::kWhite;
 
 class ExampleLayer : public chess::Layer {
 public:
@@ -83,13 +84,13 @@ private:
     }
 
     if (selected) {
-      ImVec2 p0(origin.x + selected->file * CellSize,
-                origin.y + selected->rank * CellSize);
+      ImVec2 p0(origin.x + ToFile(selected->file) * CellSize,
+                origin.y + ToRank(selected->rank) * CellSize);
       ImVec2 p1(p0.x + CellSize, p0.y + CellSize);
       for (const auto move :
             game.GetLegalMoves({selected->rank, selected->file})) {
-        ImVec2 p3(origin.x + move.file * CellSize + CellSize / 2,
-                  origin.y + move.rank * CellSize + CellSize / 2);
+        ImVec2 p3(origin.x + ToFile(move.file) * CellSize + CellSize / 2,
+                  origin.y + ToRank(move.rank) * CellSize + CellSize / 2);
         draw_list->AddCircleFilled(p3, CellSize / 6,
                                     IM_COL32(0, 0, 0, 160));
       }
@@ -129,7 +130,7 @@ private:
           continue;
         }
 
-        ImVec2 pos(origin.x + x * CellSize, origin.y + y * CellSize);
+        ImVec2 pos(origin.x + ToFile(x) * CellSize, origin.y + ToRank(y) * CellSize);
 
         draw_list->AddImage((ImTextureID)(intptr_t)it->second, pos,
                             ImVec2(pos.x + CellSize, pos.y + CellSize));
@@ -137,11 +138,20 @@ private:
     }
   }
 
+  static Rank ToRank(int y) {
+    return PlayerView == Color::kBlack ? static_cast<Rank>(y)
+                                       : static_cast<Rank>(kBoardSize - y - 1);
+  }
+
+  static File ToFile(int x) {
+    return static_cast<File>(x);
+  }
+
   Square ScreenToSquare(const ImVec2& origin, const ImVec2& mouse) {
     int x = (int)((mouse.x - origin.x) / CellSize);
     int y = (int)((mouse.y - origin.y) / CellSize);
 
-    return Square{static_cast<Rank>(y), static_cast<File>(x)};
+    return Square{ToRank(y), ToFile(x)};
   }
 
   bool IsValidSquare(const Square& s) {
