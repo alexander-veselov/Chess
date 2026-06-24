@@ -6,6 +6,7 @@ namespace chess {
 
 enum class Piece : uint8_t {
   kNone,
+  kInvalid,
   kWhiteKing,
   kWhiteQueen,
   kWhiteRook,
@@ -27,5 +28,6 @@ enum class Color {
 };
 
 Color GetPieceColor(Piece piece);
+Color SwitchColor(Color color);
 
 }

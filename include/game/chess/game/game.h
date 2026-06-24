@@ -12,6 +12,7 @@ public:
   Game(const State& state);
 
   const State& GetState() const;
+  bool CanMove(Square square) const;
   bool Move(Square from, Square to);
   std::vector<Square> GetLegalMoves(Square square) const;
 

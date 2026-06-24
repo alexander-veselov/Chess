@@ -22,4 +22,14 @@ Color GetPieceColor(Piece piece) {
   return Color::kNone;
 }
 
+Color SwitchColor(Color color) {
+  switch (color) {
+  case Color::kWhite:
+    return Color::kBlack;
+  case Color::kBlack:
+    return Color::kWhite;
+  }
+  return Color::kNone;
+}
+
 } // namespace chess
