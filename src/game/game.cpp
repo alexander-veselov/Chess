@@ -231,6 +231,100 @@ static void GetPawnMoves(const State& state, Square square, std::vector<Square>&
   }
 }
 
+static void GetMoves(const State& state, Square square, std::vector<Square>& moves) {
+  const auto piece = state.board[square.rank][square.file];
+  switch (piece) {
+  case Piece::kWhiteKing:
+  case Piece::kBlackKing:
+    GetKingMoves(state, square, moves);
+    break;
+  case Piece::kWhiteQueen:
+  case Piece::kBlackQueen:
+    GetQueenMoves(state, square, moves);
+    break;
+  case Piece::kWhiteRook:
+  case Piece::kBlackRook:
+    GetRookMoves(state, square, moves);
+    break;
+  case Piece::kWhiteBishop:
+  case Piece::kBlackBishop:
+    GetBishopMoves(state, square, moves);
+    break;
+  case Piece::kWhiteKnight:
+  case Piece::kBlackKnight:
+    GetKnightMoves(state, square, moves);
+    break;
+  case Piece::kWhitePawn:
+  case Piece::kBlackPawn:
+    GetPawnMoves(state, square, moves);
+    break;
+  }
+}
+
+static bool IsInCheck(const State& state, Color turn) {
+  const auto opponentColor = SwitchColor(turn);
+  const auto king = turn == Color::kWhite ? Piece::kWhiteKing : Piece::kBlackKing;
+  for (auto rank = 0; rank < kBoardSize; ++rank) {
+    for (auto file = 0; file < kBoardSize; ++file) {
+      if (GetPieceColor(state.board[rank][file]) == opponentColor) {
+        auto moves = std::vector<Square>{};
+        GetMoves(state, Square{static_cast<Rank>(rank), static_cast<File>(file)}, moves);
+        for (const auto& move : moves) {
+          if (state.board[move.rank][move.file] == king) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
+static bool CanMove(const State& state, Square square) {
+  return GetPieceColor(Get(state.board, square)) == state.turn;
+}
+
+static void Move(State& state, Square from, Square to) {
+  MoveOrCapture(state.board, from, to);
+  if (state.enPassant.has_value() && to == state.enPassant) {
+    EnPassantCapture(state.board, from, to);
+  }
+  state.turn = SwitchColor(state.turn);
+  state.enPassant = EvaluateEnPassant(state.board, from, to);
+}
+
+static std::vector<Square> GetLegalMoves(const State& state, Square square) {
+  auto& board = state.board;
+  auto moves = std::vector<Square>{};
+  auto legalMoves = std::vector<Square>{};
+  if (!CanMove(state, square)) {
+    return moves;
+  }
+  GetMoves(state, square, moves);
+  for (const auto move : moves) {
+    auto newState = State{state};
+    Move(newState, square, move);
+    if (!IsInCheck(newState, state.turn)) {
+      legalMoves.push_back(move);
+    }
+  }
+  return legalMoves;
+}
+
+static bool LegalMove(State& state, Square from, Square to) {
+  if (from == to || !CanMove(state, from)) {
+    return false;
+  }
+  auto& board = state.board;
+  for (const auto move : GetLegalMoves(state, from)) {
+    if (move == to) {
+      Move(state, from, to);
+      return true;
+    }
+  }
+  return false;
+}
+
 Game::Game()
   : state_{State{CreateDefaultBoard(), Color::kWhite}} {
 }
@@ -244,62 +338,15 @@ const State& Game::GetState() const {
 }
 
 bool Game::CanMove(Square square) const {
-  return GetPieceColor(Get(state_.board, square)) == state_.turn;
+  return chess::CanMove(state_, square);
 }
 
 bool Game::Move(Square from, Square to) {
-  if (from == to || !CanMove(from)) {
-    return false;
-  }
-  auto& board = state_.board;
-  for (const auto move : GetLegalMoves(from)) {
-    if (move == to) {
-      MoveOrCapture(state_.board, from, to);
-      if (state_.enPassant.has_value() && to == state_.enPassant) {
-        EnPassantCapture(state_.board, from, to);
-      }
-      state_.turn = SwitchColor(state_.turn);
-      state_.enPassant = EvaluateEnPassant(state_.board, from, to);
-      return true;
-    }
-  }
-  return false;
+  return chess::LegalMove(state_, from, to);
 }
 
 std::vector<Square> Game::GetLegalMoves(Square square) const {
-  auto& board = state_.board;
-  const auto piece = board[square.rank][square.file];
-  auto moves = std::vector<Square>{};
-  if (!CanMove(square)) {
-    return moves;
-  }
-  switch (piece) {
-  case Piece::kWhiteKing:
-  case Piece::kBlackKing:
-    GetKingMoves(state_, square, moves);
-    break;
-  case Piece::kWhiteQueen:
-  case Piece::kBlackQueen:
-    GetQueenMoves(state_, square, moves);
-    break;
-  case Piece::kWhiteRook:
-  case Piece::kBlackRook:
-    GetRookMoves(state_, square, moves);
-    break;
-  case Piece::kWhiteBishop:
-  case Piece::kBlackBishop:
-    GetBishopMoves(state_, square, moves);
-    break;
-  case Piece::kWhiteKnight:
-  case Piece::kBlackKnight:
-    GetKnightMoves(state_, square, moves);
-    break;
-  case Piece::kWhitePawn:
-  case Piece::kBlackPawn:
-    GetPawnMoves(state_, square, moves);
-    break;
-  }
-  return moves;
+  return chess::GetLegalMoves(state_, square);
 }
 
 } // namespace chess
