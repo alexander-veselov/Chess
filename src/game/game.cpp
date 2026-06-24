@@ -57,11 +57,31 @@ static Piece Get(const Board& board, Square square) {
   return board[square.rank][square.file];
 }
 
+static void MoveOrCapture(Board& board, Square from, Square to) {
+  board[to.rank][to.file] = board[from.rank][from.file];
+  board[from.rank][from.file] = Piece::kNone;
+}
+
+static void EnPassantCapture(Board& board, Square from, Square to) {
+  const auto captureSquare = Square{from.rank, to.file};
+  board[captureSquare.rank][captureSquare.file] = Piece::kNone;
+}
+
+static std::optional<Square> EvaluateEnPassant(const Board& board, Square from, Square to) {
+  const auto piece = Get(board, to);
+  if (piece == Piece::kBlackPawn || piece == Piece::kWhitePawn) {
+    const auto rankShift = to.rank - from.rank;
+    if (std::abs(rankShift) == 2) {
+      return ShiftSquare(from, rankShift / 2, 0);
+    }
+  }
+  return std::nullopt;
+}
+
 static bool PushIfEmpty(std::vector<Square>& moves, const Board& board, Square square,
                         int rankShift, int fileShift) {
-  const auto fromSquare = square;
   const auto toSquare = ShiftSquare(square, rankShift, fileShift);
-  const auto fromPiece = Get(board, fromSquare);
+  const auto fromPiece = Get(board, square);
   const auto toPiece = Get(board, toSquare);
 
   if (toPiece == Piece::kInvalid) {
@@ -76,10 +96,23 @@ static bool PushIfEmpty(std::vector<Square>& moves, const Board& board, Square s
   return false;
 }
 
-static bool PushIfEmptyOrOpposite(std::vector<Square>& moves, const Board& board, Square square,
-                                  int rankShift, int fileShift) {
-  const auto fromSquare = square;
+static void PushIfOpposite(std::vector<Square>& moves, const Board& board, Square square,
+                           int rankShift, int fileShift) {
   const auto toSquare = ShiftSquare(square, rankShift, fileShift);
+  const auto fromPiece = Get(board, square);
+  const auto toPiece = Get(board, toSquare);
+
+  if (toPiece == Piece::kNone || toPiece == Piece::kInvalid) {
+    return;
+  }
+
+  if (GetPieceColor(fromPiece) != GetPieceColor(toPiece)) {
+    moves.push_back(toSquare);
+  }
+}
+
+static bool PushIfEmptyOrOpposite(std::vector<Square>& moves, const Board& board, Square fromSquare,
+                                  Square toSquare) {
   const auto fromPiece = Get(board, fromSquare);
   const auto toPiece = Get(board, toSquare);
 
@@ -100,6 +133,11 @@ static bool PushIfEmptyOrOpposite(std::vector<Square>& moves, const Board& board
   return false;
 }
 
+static bool PushIfEmptyOrOpposite(std::vector<Square>& moves, const Board& board, Square square,
+                                  int rankShift, int fileShift) {
+  return PushIfEmptyOrOpposite(moves, board, square, ShiftSquare(square, rankShift, fileShift));
+}
+
 static void GetKingMoves(const State& state, Square square, std::vector<Square>& moves) {
   PushIfEmptyOrOpposite(moves, state.board, square, -1, -1);
   PushIfEmptyOrOpposite(moves, state.board, square, -1, +0);
@@ -113,7 +151,7 @@ static void GetKingMoves(const State& state, Square square, std::vector<Square>&
 
 static void GetRookMoves(const State& state, Square square, std::vector<Square>& moves) {
   for (auto i = 1; i < kBoardSize; ++i) {
-    if (!PushIfEmptyOrOpposite(moves, state.board, square, i, 0)) {
+    if (!PushIfEmptyOrOpposite(moves, state.board, square, +i, 0)) {
       break;
     }
   }
@@ -123,7 +161,7 @@ static void GetRookMoves(const State& state, Square square, std::vector<Square>&
     }
   }
   for (auto i = 1; i < kBoardSize; ++i) {
-    if (!PushIfEmptyOrOpposite(moves, state.board, square, 0, i)) {
+    if (!PushIfEmptyOrOpposite(moves, state.board, square, 0, +i)) {
       break;
     }
   }
@@ -136,12 +174,12 @@ static void GetRookMoves(const State& state, Square square, std::vector<Square>&
 
 static void GetBishopMoves(const State& state, Square square, std::vector<Square>& moves) {
   for (auto i = 1; i < kBoardSize; ++i) {
-    if (!PushIfEmptyOrOpposite(moves, state.board, square, i, i)) {
+    if (!PushIfEmptyOrOpposite(moves, state.board, square, +i, +i)) {
       break;
     }
   }
   for (auto i = 1; i < kBoardSize; ++i) {
-    if (!PushIfEmptyOrOpposite(moves, state.board, square, i, -i)) {
+    if (!PushIfEmptyOrOpposite(moves, state.board, square, +i, -i)) {
       break;
     }
   }
@@ -151,7 +189,7 @@ static void GetBishopMoves(const State& state, Square square, std::vector<Square
     }
   }
   for (auto i = 1; i < kBoardSize; ++i) {
-    if (!PushIfEmptyOrOpposite(moves, state.board, square, -i, i)) {
+    if (!PushIfEmptyOrOpposite(moves, state.board, square, -i, +i)) {
       break;
     }
   }
@@ -174,13 +212,22 @@ static void GetKnightMoves(const State& state, Square square, std::vector<Square
 }
 
 static void GetPawnMoves(const State& state, Square square, std::vector<Square>& moves) {
-  // TODO: finish capture and en-passant
   const auto color = GetPieceColor(state.board[square.rank][square.file]);
   const auto direction = color == Color::kWhite ? 1 : -1;
   const auto defaultRank = color == Color::kWhite ? Rank::_2 : Rank::_7;
-  PushIfEmpty(moves, state.board, square, direction, 0);
-  if (square.rank == defaultRank) {
-    PushIfEmpty(moves, state.board, square, direction * 2, 0);
+  if (PushIfEmpty(moves, state.board, square, direction, 0)) {
+    if (square.rank == defaultRank) {
+      PushIfEmpty(moves, state.board, square, direction * 2, 0);
+    }
+  }
+  PushIfOpposite(moves, state.board, square, direction, -1);
+  PushIfOpposite(moves, state.board, square, direction, +1);
+  if (state.enPassant.has_value()) {
+    const auto fileShift = state.enPassant->file - square.file;
+    const auto rankShift = state.enPassant->rank - square.rank;
+    if (std::abs(fileShift) == 1 && std::abs(rankShift) == 1) {
+      PushIfEmptyOrOpposite(moves, state.board, square, state.enPassant.value());
+    }
   }
 }
 
@@ -201,15 +248,18 @@ bool Game::CanMove(Square square) const {
 }
 
 bool Game::Move(Square from, Square to) {
-  if (from.file == to.file && from.rank == to.rank || !CanMove(from)) {
+  if (from == to || !CanMove(from)) {
     return false;
   }
   auto& board = state_.board;
   for (const auto move : GetLegalMoves(from)) {
-    if (move.file == to.file && move.rank == to.rank) {
-      board[to.rank][to.file] = board[from.rank][from.file];
-      board[from.rank][from.file] = Piece::kNone;
+    if (move == to) {
+      MoveOrCapture(state_.board, from, to);
+      if (state_.enPassant.has_value() && to == state_.enPassant) {
+        EnPassantCapture(state_.board, from, to);
+      }
       state_.turn = SwitchColor(state_.turn);
+      state_.enPassant = EvaluateEnPassant(state_.board, from, to);
       return true;
     }
   }

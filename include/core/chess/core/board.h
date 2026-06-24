@@ -15,6 +15,8 @@ struct Square {
   File file;
 };
 
+bool operator==(const Square& square1, const Square& square2);
+
 using Board = std::array<std::array<Piece, kBoardSize>, kBoardSize>;
 
 }
