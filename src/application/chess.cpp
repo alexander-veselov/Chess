@@ -14,6 +14,22 @@ namespace chess {
 static constexpr auto CellSize = 200.0f;
 static constexpr auto PlayerView = Color::kWhite;
 
+static std::string_view StatusToString(Status status) {
+  switch (status) {
+  case Status::kWhiteToMove:
+    return "White to move";
+  case Status::kBlackToMove:
+    return "Black to move";
+  case Status::kWhiteWon:
+    return "White won";
+  case Status::kBlackWon:
+    return "Black won";
+  case Status::kDraw:
+    return "Draw";
+  }
+  return "";
+}
+
 class ExampleLayer : public chess::Layer {
 public:
   void OnUIRender() override {
@@ -22,12 +38,17 @@ public:
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
+
+
     ImGui::Begin("Chess", nullptr,
                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
                      ImGuiWindowFlags_NoCollapse);
-
     static Game game{};
     static std::optional<Square> selected;
+
+    ImGui::SetWindowFontScale(3.0f);
+    ImGui::Text("%s", StatusToString(game.GetStatus()).data());
+    ImGui::SetWindowFontScale(1.0f);
 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     ImVec2 origin = ImGui::GetCursorScreenPos();
@@ -102,7 +123,26 @@ private:
       draw_list->AddRectFilled(p0, p1, IM_COL32(255, 255, 0, 80));
     }
 
+    if (game.IsInCheck()) {
+      DrawCheck(draw_list, origin, game.GetState());
+    }
     DrawPieces(draw_list, origin, board);
+  }
+
+  void DrawCheck(ImDrawList* draw_list, const ImVec2& origin, const State& state) {
+    const auto king = state.turn == Color::kWhite ? Piece::kWhiteKing : Piece::kBlackKing;
+    for (int y = 0; y < kBoardSize; y++) {
+      for (int x = 0; x < kBoardSize; x++) {
+        if (state.board[y][x] != king) {
+          continue;
+        }
+        ImVec2 p(origin.x + ToFile(x) * CellSize + CellSize / 2,
+                 origin.y + ToRank(y) * CellSize + CellSize / 2);
+        const auto color = IM_COL32(128, 0, 0, 64);
+        const auto thickness = CellSize / 12.f;
+        draw_list->AddCircle(p, CellSize / 2.f - thickness / 2.f + 1.f, color, 0, thickness);
+      }
+    }
   }
 
   void DrawPieces(ImDrawList* draw_list, const ImVec2& origin, const Board& board) {
@@ -166,7 +206,7 @@ std::shared_ptr<Application> CreateApplication() {
   auto specification = chess::Application::Specification{};
   specification.name = "Chess";
   specification.width = kBoardSize * CellSize;
-  specification.height = kBoardSize * CellSize;
+  specification.height = kBoardSize * CellSize + 44; // TODO: fix 44
 
   auto application = std::make_shared<chess::Application>(specification);
   application->PushLayer(std::make_shared<ExampleLayer>());

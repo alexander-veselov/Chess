@@ -201,6 +201,7 @@ static void GetQueenMoves(const State& state, Square square, std::vector<Square>
 }
 
 static void GetKnightMoves(const State& state, Square square, std::vector<Square>& moves) {
+  // TODO: implement castling
   PushIfEmptyOrOpposite(moves, state.board, square, +1, +2);
   PushIfEmptyOrOpposite(moves, state.board, square, +1, -2);
   PushIfEmptyOrOpposite(moves, state.board, square, -1, +2);
@@ -280,7 +281,7 @@ static bool IsInCheck(const State& state, Color turn) {
   return false;
 }
 
-static bool CanMove(const State& state, Square square) {
+static bool CanMoveInTurn(const State& state, Square square) {
   return GetPieceColor(Get(state.board, square)) == state.turn;
 }
 
@@ -297,7 +298,7 @@ static std::vector<Square> GetLegalMoves(const State& state, Square square) {
   auto& board = state.board;
   auto moves = std::vector<Square>{};
   auto legalMoves = std::vector<Square>{};
-  if (!CanMove(state, square)) {
+  if (!CanMoveInTurn(state, square)) {
     return moves;
   }
   GetMoves(state, square, moves);
@@ -311,8 +312,41 @@ static std::vector<Square> GetLegalMoves(const State& state, Square square) {
   return legalMoves;
 }
 
+static bool CanMove(const State& state, Square square) {
+  return !GetLegalMoves(state, square).empty();
+}
+
+static bool HasAvailableMoves(const State& state) {
+  for (auto rank = 0; rank < kBoardSize; ++rank) {
+    for (auto file = 0; file < kBoardSize; ++file) {
+      if (GetPieceColor(state.board[rank][file]) == state.turn) {
+        if (CanMove(state, Square{static_cast<Rank>(rank), static_cast<File>(file)})) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+static Status GetStatus(const State& state) {
+  const auto isInCheck = IsInCheck(state, state.turn);
+  const auto hasAvailableMoves = HasAvailableMoves(state);
+  if (!hasAvailableMoves) {
+    if (isInCheck) {
+      return state.turn == Color::kWhite ? Status::kBlackWon : Status::kWhiteWon;
+    } else {
+      return Status::kDraw;
+    }
+  }
+
+  // TODO: implement draw by repetition/insufficient material/etc
+
+  return state.turn == Color::kWhite ? Status::kWhiteToMove : Status::kBlackToMove;
+}
+
 static bool LegalMove(State& state, Square from, Square to) {
-  if (from == to || !CanMove(state, from)) {
+  if (from == to || !CanMoveInTurn(state, from)) {
     return false;
   }
   auto& board = state.board;
@@ -337,8 +371,16 @@ const State& Game::GetState() const {
   return state_;
 }
 
+const Status Game::GetStatus() const {
+  return chess::GetStatus(state_);
+}
+
 bool Game::CanMove(Square square) const {
   return chess::CanMove(state_, square);
+}
+
+bool Game::IsInCheck() const {
+  return chess::IsInCheck(state_, state_.turn);
 }
 
 bool Game::Move(Square from, Square to) {
