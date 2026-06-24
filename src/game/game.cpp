@@ -53,9 +53,9 @@ static bool PushIfValid(std::vector<Square>& moves, Square square) {
   return false;
 }
 
-static std::vector<Square> GetKingMoves(const Board& board, Square square) {
+static void GetKingMoves(const State& state, Square square,
+                         std::vector<Square>& moves) {
   // finish capture, don't capture own pieces
-  auto moves = std::vector<Square>{};
   PushIfValid(moves, Square{(Rank)(square.rank - 1), (File)(square.file - 1)});
   PushIfValid(moves, Square{(Rank)(square.rank - 1), (File)(square.file + 0)});
   PushIfValid(moves, Square{(Rank)(square.rank - 1), (File)(square.file + 1)});
@@ -64,12 +64,11 @@ static std::vector<Square> GetKingMoves(const Board& board, Square square) {
   PushIfValid(moves, Square{(Rank)(square.rank + 1), (File)(square.file - 1)});
   PushIfValid(moves, Square{(Rank)(square.rank + 1), (File)(square.file + 0)});
   PushIfValid(moves, Square{(Rank)(square.rank + 1), (File)(square.file + 1)});
-  return moves;
 }
 
-static std::vector<Square> GetRookMoves(const Board& board, Square square) {
+static void GetRookMoves(const State& state, Square square,
+                         std::vector<Square>& moves) {
   // finish capture, don't capture own pieces
-  auto moves = std::vector<Square>{};
   for (auto i = 1; i < kBoardSize; ++i) {
     if (!PushIfValid(
             moves, Square{(Rank)(square.rank + i), (File)(square.file + 0)})) {
@@ -94,12 +93,11 @@ static std::vector<Square> GetRookMoves(const Board& board, Square square) {
       break;
     }
   }
-  return moves;
 }
 
-static std::vector<Square> GetBishopMoves(const Board& board, Square square) {
+static void GetBishopMoves(const State& state, Square square,
+                           std::vector<Square>& moves) {
   // TODO: finish capture, don't capture own pieces
-  auto moves = std::vector<Square>{};
   for (auto i = 1; i < kBoardSize; ++i) {
     if (!PushIfValid(
             moves, Square{(Rank)(square.rank + i), (File)(square.file + i)})) {
@@ -124,27 +122,17 @@ static std::vector<Square> GetBishopMoves(const Board& board, Square square) {
       break;
     }
   }
-  return moves;
 }
 
-static std::vector<Square> GetQueenMoves(const Board& board, Square square) {
-  // TODO: improve performance
-  auto result = std::vector<Square>{};
-
-  auto bishopMoves = GetBishopMoves(board, square);
-  auto rookMoves = GetRookMoves(board, square);
-
-  result.reserve(bishopMoves.size() + rookMoves.size());
-
-  result.insert(result.end(), bishopMoves.begin(), bishopMoves.end());
-  result.insert(result.end(), rookMoves.begin(), rookMoves.end());
-
-  return result;
+static void GetQueenMoves(const State& state, Square square,
+                          std::vector<Square>& moves) {
+  GetBishopMoves(state, square, moves);
+  GetRookMoves(state, square, moves);
 }
 
-static std::vector<Square> GetKnightMoves(const Board& board, Square square) {
+static void GetKnightMoves(const State& state, Square square,
+                           std::vector<Square>& moves) {
   // TODO: finish capture, don't capture own pieces
-  auto moves = std::vector<Square>{};
   PushIfValid(moves, Square{(Rank)(square.rank + 1), (File)(square.file + 2)});
   PushIfValid(moves, Square{(Rank)(square.rank + 1), (File)(square.file - 2)});
   PushIfValid(moves, Square{(Rank)(square.rank - 1), (File)(square.file + 2)});
@@ -153,21 +141,19 @@ static std::vector<Square> GetKnightMoves(const Board& board, Square square) {
   PushIfValid(moves, Square{(Rank)(square.rank - 2), (File)(square.file + 1)});
   PushIfValid(moves, Square{(Rank)(square.rank + 2), (File)(square.file - 1)});
   PushIfValid(moves, Square{(Rank)(square.rank - 2), (File)(square.file - 1)});
-  return moves;
 }
 
-static std::vector<Square> GetPawnMoves(const Board& board, Square square) {
+static void GetPawnMoves(const State& state, Square square,
+                         std::vector<Square>& moves) {
   // TODO: finish capture and en-passant
-  const auto color = GetPieceColor(board[square.rank][square.file]);
+  const auto color = GetPieceColor(state.board[square.rank][square.file]);
   const auto direction = color == Color::kWhite ? -1 : 1;
   const auto defaultRank = color == Color::kWhite ? Rank::_2 : Rank::_7;
-  auto moves = std::vector<Square>{};
   PushIfValid(moves, Square{(Rank)(square.rank + direction), square.file});
   if (square.rank == defaultRank) {
     PushIfValid(moves,
                 Square{(Rank)(square.rank + direction * 2), square.file});
   }
-  return moves;
 }
 
 Game::Game()
@@ -202,27 +188,34 @@ bool Game::Move(Square from, Square to) {
 std::vector<Square> Game::GetLegalMoves(Square square) const {
   auto& board = state_.board;
   const auto piece = board[square.rank][square.file];
+  auto moves = std::vector<Square>{};
   switch (piece) {
   case Piece::kWhiteKing:
   case Piece::kBlackKing:
-    return GetKingMoves(board, square);
+    GetKingMoves(state_, square, moves);
+    break;
   case Piece::kWhiteQueen:
   case Piece::kBlackQueen:
-    return GetQueenMoves(board, square);
+    GetQueenMoves(state_, square, moves);
+    break;
   case Piece::kWhiteRook:
   case Piece::kBlackRook:
-    return GetRookMoves(board, square);
+    GetRookMoves(state_, square, moves);
+    break;
   case Piece::kWhiteBishop:
   case Piece::kBlackBishop:
-    return GetBishopMoves(board, square);
+    GetBishopMoves(state_, square, moves);
+    break;
   case Piece::kWhiteKnight:
   case Piece::kBlackKnight:
-    return GetKnightMoves(board, square);
+    GetKnightMoves(state_, square, moves);
+    break;
   case Piece::kWhitePawn:
   case Piece::kBlackPawn:
-    return GetPawnMoves(board, square);
+    GetPawnMoves(state_, square, moves);
+    break;
   }
-  return {};
+  return moves;
 }
 
 } // namespace chess
