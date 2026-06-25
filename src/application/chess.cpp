@@ -81,8 +81,12 @@ private:
         selected = sq;
       }
     } else {
-      game.Move(*selected, sq);
-      selected.reset();
+      if (GetPieceColor(p) == GetPieceColor(board[selected->rank][selected->file])) {
+        selected = sq;
+      } else {
+        game.Move(*selected, sq);
+        selected.reset();
+      }
     }
   }
 
