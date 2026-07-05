@@ -46,6 +46,7 @@ public:
     static Game game{};
     static std::optional<Square> selected;
 
+    // TODO: don't call expensive GetStatus every frame
     ImGui::SetWindowFontScale(3.0f);
     ImGui::Text("%s", StatusToString(game.GetStatus()).data());
     ImGui::SetWindowFontScale(1.0f);
@@ -61,31 +62,45 @@ public:
   }
 
 private:
-  void HandleInput(Game& game, std::optional<Square>& selected, const ImVec2& origin) {
+  void HandleInput(Game& game, std::optional<Square>& fromSquare, const ImVec2& origin) {
     if (!ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
       return;
     }
 
     ImVec2 mouse = ImGui::GetMousePos();
-    Square sq = ScreenToSquare(origin, mouse);
+    Square toSquare = ScreenToSquare(origin, mouse);
 
-    if (!IsValidSquare(sq)) {
+    if (!IsValidSquare(toSquare)) {
       return;
     }
 
     const Board& board = game.GetState().board;
-    Piece p = board[sq.rank][sq.file];
 
-    if (!selected) {
-      if (p != Piece::kNone && game.CanMove(sq)) {
-        selected = sq;
+    Piece toPiece = board[toSquare.rank][toSquare.file];
+
+    if (!fromSquare) {
+      if (toPiece != Piece::kNone && game.CanMove(toSquare)) {
+        fromSquare = toSquare;
       }
     } else {
-      if (GetPieceColor(p) == GetPieceColor(board[selected->rank][selected->file])) {
-        selected = sq;
+      Piece fromPiece = board[fromSquare->rank][fromSquare->file];
+      if (toSquare == *fromSquare) {
+        fromSquare = std::nullopt;
+      } else if (GetPieceColor(toPiece) == GetPieceColor(fromPiece)) {
+        fromSquare = toSquare;
       } else {
-        game.Move(*selected, sq);
-        selected.reset();
+        auto move = Move{};
+        move.from = *fromSquare;
+        move.to = toSquare;
+        if (GetBasePiece(fromPiece) == BasePiece::kPawn &&
+            (toSquare.rank == Rank::_1 || toSquare.rank == Rank::_8)) {
+          move.promotion = MakePiece(GetPieceColor(fromPiece),
+                                     BasePiece::kQueen); // TODO: implement promotion GUI
+        } else {
+          move.promotion = std::nullopt;
+        }
+        game.MakeMove(move);
+        fromSquare.reset();
       }
     }
   }
@@ -112,12 +127,13 @@ private:
       ImVec2 p0(origin.x + ToFile(selected->file) * CellSize,
                 origin.y + ToRank(selected->rank) * CellSize);
       ImVec2 p1(p0.x + CellSize, p0.y + CellSize);
+      // TODO: don't call expensive GetLegalMoves every frame
       for (const auto move : game.GetLegalMoves({selected->rank, selected->file})) {
-        ImVec2 p3(origin.x + ToFile(move.file) * CellSize + CellSize / 2,
-                  origin.y + ToRank(move.rank) * CellSize + CellSize / 2);
+        ImVec2 p3(origin.x + ToFile(move.to.file) * CellSize + CellSize / 2,
+                  origin.y + ToRank(move.to.rank) * CellSize + CellSize / 2);
 
         const auto color = IM_COL32(0, 0, 0, 64);
-        if (board[move.rank][move.file] != Piece::kNone) {
+        if (board[move.to.rank][move.to.file] != Piece::kNone) {
           const auto thickness = CellSize / 12.f;
           draw_list->AddCircle(p3, CellSize / 2.f - thickness / 2.f + 1.f, color, 0, thickness);
         } else {

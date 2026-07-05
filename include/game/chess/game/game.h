@@ -1,6 +1,7 @@
 #pragma once
 
 #include "chess/game/state.h"
+#include "chess/core/move.h"
 
 #include <vector>
 
@@ -17,8 +18,8 @@ public:
   const Status GetStatus() const;
   bool CanMove(Square square) const;
   bool IsInCheck() const;
-  bool Move(Square from, Square to);
-  std::vector<Square> GetLegalMoves(Square square) const;
+  bool MakeMove(const Move& move);
+  std::vector<Move> GetLegalMoves(Square square) const;
 
 private:
   State state_;
