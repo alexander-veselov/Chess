@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(imgui CONFIG REQUIRED)
 find_package(lunasvg CONFIG REQUIRED)
+find_package(GTest CONFIG REQUIRED)
 
 # Core library
 set(CORE_INCLUDE_FOLDER "include/core")
@@ -25,15 +26,6 @@ file(GLOB ENGINE_SOURCES ${ENGINE_SOURCE_FOLDER}/*.cpp)
 add_library(Engine STATIC ${ENGINE_HEADERS} ${ENGINE_SOURCES})
 target_include_directories(Engine PUBLIC ${ENGINE_INCLUDE_FOLDER})
 
-# Game library
-set(GAME_INCLUDE_FOLDER "include/game")
-set(GAME_SOURCE_FOLDER "src/game")
-file(GLOB GAME_HEADERS ${GAME_INCLUDE_FOLDER}/chess/game/*.h)
-file(GLOB GAME_SOURCES ${GAME_SOURCE_FOLDER}/*.cpp)
-add_library(Game STATIC ${GAME_HEADERS} ${GAME_SOURCES})
-target_link_libraries(Game PUBLIC Core)
-target_include_directories(Game PUBLIC ${GAME_INCLUDE_FOLDER})
-
 # Application executable
 set(APPLICATION_INCLUDE_FOLDER "include/application")
 set(APPLICATION_SOURCE_FOLDER "src/application")
@@ -41,8 +33,18 @@ file(GLOB APPLICATION_HEADERS ${APPLICATION_INCLUDE_FOLDER}/chess/application/*.
 file(GLOB APPLICATION_SOURCES ${APPLICATION_SOURCE_FOLDER}/*.cpp)
 add_executable(Application ${APPLICATION_HEADERS} ${APPLICATION_SOURCES})
 target_include_directories(Application PUBLIC ${APPLICATION_INCLUDE_FOLDER})
-target_link_libraries(Application PRIVATE imgui::imgui lunasvg::lunasvg opengl32 Game)
+target_link_libraries(Application PRIVATE imgui::imgui lunasvg::lunasvg opengl32 Core)
 set_property(TARGET Application PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+
+# Test executable
+set(TEST_INCLUDE_FOLDER "include/test")
+set(TEST_SOURCE_FOLDER "src/test")
+file(GLOB TEST_HEADERS ${TEST_INCLUDE_FOLDER}/chess/test/*.h)
+file(GLOB TEST_SOURCES ${TEST_SOURCE_FOLDER}/*.cpp)
+add_executable(Test ${TEST_HEADERS} ${TEST_SOURCES})
+target_include_directories(Test PUBLIC ${TEST_INCLUDE_FOLDER})
+target_link_libraries(Test PRIVATE Core GTest::gtest GTest::gtest_main)
+set_property(TARGET Test PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Application)
 

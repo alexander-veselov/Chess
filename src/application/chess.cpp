@@ -2,7 +2,7 @@
 #include "chess/application/texture.h"
 
 #include "chess/core/board.h"
-#include "chess/game/game.h"
+#include "chess/core/game.h"
 
 #include <optional>
 #include <unordered_map>

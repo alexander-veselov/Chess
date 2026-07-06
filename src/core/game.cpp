@@ -1,17 +1,17 @@
-#include "chess/game/game.h"
+#include "chess/core/game.h"
 #include "chess/core/fen.h"
 
 namespace chess {
 
-static State CreateDefaultState() {
+State CreateDefaultState() {
   return StateFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
-static bool IsValidSquare(int rank, int file) {
+bool IsValidSquare(int rank, int file) {
   return File::_A <= file && file <= File::_H && Rank::_1 <= rank && rank <= Rank::_8;
 }
 
-static Square ShiftSquare(Square square, int rankShift, int fileShift) {
+Square ShiftSquare(Square square, int rankShift, int fileShift) {
   if (!IsValidSquare(square.rank + rankShift, square.file + fileShift)) {
     return square;
   }
@@ -20,11 +20,11 @@ static Square ShiftSquare(Square square, int rankShift, int fileShift) {
   return Square{rank, file};
 }
 
-static Piece Get(const Board& board, Square square) {
+Piece Get(const Board& board, Square square) {
   return board[square.rank][square.file];
 }
 
-static void MoveOrCapture(Board& board, const Move& move) {
+void MoveOrCapture(Board& board, const Move& move) {
   if (move.promotion.has_value()) {
     board[move.to.rank][move.to.file] = move.promotion.value();
   } else {
@@ -33,12 +33,12 @@ static void MoveOrCapture(Board& board, const Move& move) {
   board[move.from.rank][move.from.file] = Piece::kNone;
 }
 
-static void EnPassantCapture(Board& board, Square from, Square to) {
+void EnPassantCapture(Board& board, Square from, Square to) {
   const auto captureSquare = Square{from.rank, to.file};
   board[captureSquare.rank][captureSquare.file] = Piece::kNone;
 }
 
-static std::optional<Square> EvaluateEnPassant(const Board& board, Square from, Square to) {
+std::optional<Square> EvaluateEnPassant(const Board& board, Square from, Square to) {
   const auto piece = Get(board, to);
   if (piece == Piece::kBlackPawn || piece == Piece::kWhitePawn) {
     const auto rankShift = to.rank - from.rank;
@@ -49,7 +49,7 @@ static std::optional<Square> EvaluateEnPassant(const Board& board, Square from, 
   return std::nullopt;
 }
 
-static void PushPawn(std::vector<Move>& moves, Square fromSquare, Square toSquare, Color color) {
+void PushPawn(std::vector<Move>& moves, Square fromSquare, Square toSquare, Color color) {
   if (toSquare.rank == Rank::_1 || toSquare.rank == Rank::_8) {
     moves.push_back(Move{fromSquare, toSquare, MakePiece(color, BasePiece::kBishop)});
     moves.push_back(Move{fromSquare, toSquare, MakePiece(color, BasePiece::kRook)});
@@ -60,7 +60,7 @@ static void PushPawn(std::vector<Move>& moves, Square fromSquare, Square toSquar
   }
 }
 
-static bool PushPawnIfEmpty(std::vector<Move>& moves, const Board& board, Square fromSquare,
+bool PushPawnIfEmpty(std::vector<Move>& moves, const Board& board, Square fromSquare,
                             int rankShift, int fileShift) {
   const auto toSquare = ShiftSquare(fromSquare, rankShift, fileShift);
   const auto fromPiece = Get(board, fromSquare);
@@ -74,7 +74,7 @@ static bool PushPawnIfEmpty(std::vector<Move>& moves, const Board& board, Square
   return false;
 }
 
-static void PushPawnIfOpposite(std::vector<Move>& moves, const Board& board, Square fromSquare,
+void PushPawnIfOpposite(std::vector<Move>& moves, const Board& board, Square fromSquare,
                                int rankShift, int fileShift) {
   const auto toSquare = ShiftSquare(fromSquare, rankShift, fileShift);
   const auto fromPiece = Get(board, fromSquare);
@@ -90,7 +90,7 @@ static void PushPawnIfOpposite(std::vector<Move>& moves, const Board& board, Squ
   }
 }
 
-static bool PushIfEmptyOrOpposite(std::vector<Move>& moves, const Board& board, Square fromSquare,
+bool PushIfEmptyOrOpposite(std::vector<Move>& moves, const Board& board, Square fromSquare,
                                   Square toSquare) {
   const auto fromPiece = Get(board, fromSquare);
   const auto toPiece = Get(board, toSquare);
@@ -108,15 +108,15 @@ static bool PushIfEmptyOrOpposite(std::vector<Move>& moves, const Board& board, 
   return false;
 }
 
-static bool PushIfEmptyOrOpposite(std::vector<Move>& moves, const Board& board, Square square,
+bool PushIfEmptyOrOpposite(std::vector<Move>& moves, const Board& board, Square square,
                                   int rankShift, int fileShift) {
   return PushIfEmptyOrOpposite(moves, board, square, ShiftSquare(square, rankShift, fileShift));
 }
 
-static void GetMoves(const State& state, Square square, std::vector<Move>& moves);
-static bool IsInCheck(const State& state, Color turn);
+void GetMoves(const State& state, Square square, std::vector<Move>& moves);
+bool IsInCheck(const State& state, Color turn);
 
-static void GetKingMovesWithoutCastling(const State& state, Square square, std::vector<Move>& moves) {
+void GetKingMovesWithoutCastling(const State& state, Square square, std::vector<Move>& moves) {
   PushIfEmptyOrOpposite(moves, state.board, square, -1, -1);
   PushIfEmptyOrOpposite(moves, state.board, square, -1, +0);
   PushIfEmptyOrOpposite(moves, state.board, square, -1, +1);
@@ -127,7 +127,7 @@ static void GetKingMovesWithoutCastling(const State& state, Square square, std::
   PushIfEmptyOrOpposite(moves, state.board, square, +1, +1);
 }
 
-static bool IsAttacked(const State& state, Color turn, Square square) {
+bool IsAttacked(const State& state, Color turn, Square square) {
   const auto opponentColor = SwitchColor(turn);
   for (auto rank = 0; rank < kBoardSize; ++rank) {
     for (auto file = 0; file < kBoardSize; ++file) {
@@ -154,7 +154,7 @@ static bool IsAttacked(const State& state, Color turn, Square square) {
   return false;
 }
 
-static void GetKingMoves(const State& state, Square square, std::vector<Move>& moves) {
+void GetKingMoves(const State& state, Square square, std::vector<Move>& moves) {
   GetKingMovesWithoutCastling(state, square, moves);
   if (!IsInCheck(state, state.turn)) {
     if (GetPieceColor(state.board[square.rank][square.file]) == Color::kWhite) {
@@ -195,7 +195,7 @@ static void GetKingMoves(const State& state, Square square, std::vector<Move>& m
   }
 }
 
-static void GetRookMoves(const State& state, Square square, std::vector<Move>& moves) {
+void GetRookMoves(const State& state, Square square, std::vector<Move>& moves) {
   for (auto i = 1; i < kBoardSize; ++i) {
     if (!PushIfEmptyOrOpposite(moves, state.board, square, +i, 0)) {
       break;
@@ -218,7 +218,7 @@ static void GetRookMoves(const State& state, Square square, std::vector<Move>& m
   }
 }
 
-static void GetBishopMoves(const State& state, Square square, std::vector<Move>& moves) {
+void GetBishopMoves(const State& state, Square square, std::vector<Move>& moves) {
   for (auto i = 1; i < kBoardSize; ++i) {
     if (!PushIfEmptyOrOpposite(moves, state.board, square, +i, +i)) {
       break;
@@ -241,12 +241,12 @@ static void GetBishopMoves(const State& state, Square square, std::vector<Move>&
   }
 }
 
-static void GetQueenMoves(const State& state, Square square, std::vector<Move>& moves) {
+void GetQueenMoves(const State& state, Square square, std::vector<Move>& moves) {
   GetBishopMoves(state, square, moves);
   GetRookMoves(state, square, moves);
 }
 
-static void GetKnightMoves(const State& state, Square square, std::vector<Move>& moves) {
+void GetKnightMoves(const State& state, Square square, std::vector<Move>& moves) {
   PushIfEmptyOrOpposite(moves, state.board, square, +1, +2);
   PushIfEmptyOrOpposite(moves, state.board, square, +1, -2);
   PushIfEmptyOrOpposite(moves, state.board, square, -1, +2);
@@ -257,7 +257,7 @@ static void GetKnightMoves(const State& state, Square square, std::vector<Move>&
   PushIfEmptyOrOpposite(moves, state.board, square, -2, -1);
 }
 
-static void GetPawnMoves(const State& state, Square square, std::vector<Move>& moves) {
+void GetPawnMoves(const State& state, Square square, std::vector<Move>& moves) {
   const auto color = GetPieceColor(state.board[square.rank][square.file]);
   const auto direction = color == Color::kWhite ? 1 : -1;
   const auto defaultRank = color == Color::kWhite ? Rank::_2 : Rank::_7;
@@ -277,7 +277,7 @@ static void GetPawnMoves(const State& state, Square square, std::vector<Move>& m
   }
 }
 
-static void GetMoves(const State& state, Square square, std::vector<Move>& moves) {
+void GetMoves(const State& state, Square square, std::vector<Move>& moves) {
   const auto piece = state.board[square.rank][square.file];
   switch (piece) {
   case Piece::kWhiteKing:
@@ -307,7 +307,7 @@ static void GetMoves(const State& state, Square square, std::vector<Move>& moves
   }
 }
 
-static bool IsInCheck(const State& state, Color turn) {
+bool IsInCheck(const State& state, Color turn) {
   const auto opponentColor = SwitchColor(turn);
   for (auto rank = 0; rank < kBoardSize; ++rank) {
     for (auto file = 0; file < kBoardSize; ++file) {
@@ -326,11 +326,11 @@ static bool IsInCheck(const State& state, Color turn) {
   return false;
 }
 
-static bool CanMoveInTurn(const State& state, Square square) {
+bool CanMoveInTurn(const State& state, Square square) {
   return GetPieceColor(Get(state.board, square)) == state.turn;
 }
 
-static void UpdateCastlingState(State& state, const Move& move) {
+void UpdateCastlingState(State& state, const Move& move) {
   const auto piece = state.board[move.from.rank][move.from.file];
   const auto basePiece = GetBasePiece(piece);
   if (basePiece == BasePiece::kKing) {
@@ -356,7 +356,7 @@ static void UpdateCastlingState(State& state, const Move& move) {
   }
 }
 
-static void ProcessCastle(State& state, const Move& move) {
+void ProcessCastle(State& state, const Move& move) {
   const auto piece = state.board[move.to.rank][move.to.file];
   const auto basePiece = GetBasePiece(piece);
   if (basePiece != BasePiece::kKing) {
@@ -377,7 +377,7 @@ static void ProcessCastle(State& state, const Move& move) {
   }
 }
 
-static void MakeMove(State& state, const Move& move) {
+void MakeMove(State& state, const Move& move) {
   UpdateCastlingState(state, move);
   MoveOrCapture(state.board, move);
   if (state.enPassant.has_value() && move.to == state.enPassant) {
@@ -388,12 +388,11 @@ static void MakeMove(State& state, const Move& move) {
   state.enPassant = EvaluateEnPassant(state.board, move.from, move.to);
 }
 
-static std::vector<Move> GetLegalMoves(const State& state, Square square) {
+void GetLegalMoves(const State& state, Square square, std::vector<Move>& legalMoves) {
   auto& board = state.board;
   auto moves = std::vector<Move>{};
-  auto legalMoves = std::vector<Move>{};
   if (!CanMoveInTurn(state, square)) {
-    return moves;
+    return;
   }
   GetMoves(state, square, moves);
   for (const auto move : moves) {
@@ -403,14 +402,15 @@ static std::vector<Move> GetLegalMoves(const State& state, Square square) {
       legalMoves.push_back(move);
     }
   }
-  return legalMoves;
 }
 
-static bool CanMove(const State& state, Square square) {
-  return !GetLegalMoves(state, square).empty();
+bool CanMove(const State& state, Square square) {
+  auto legalMoves = std::vector<Move>{};
+  GetLegalMoves(state, square, legalMoves);
+  return !legalMoves.empty();
 }
 
-static bool HasAvailableMoves(const State& state) {
+bool HasAvailableMoves(const State& state) {
   for (auto rank = 0; rank < kBoardSize; ++rank) {
     for (auto file = 0; file < kBoardSize; ++file) {
       if (GetPieceColor(state.board[rank][file]) == state.turn) {
@@ -423,7 +423,7 @@ static bool HasAvailableMoves(const State& state) {
   return false;
 }
 
-static Status GetStatus(const State& state) {
+Status GetStatus(const State& state) {
   const auto isInCheck = IsInCheck(state, state.turn);
   const auto hasAvailableMoves = HasAvailableMoves(state);
   if (!hasAvailableMoves) {
@@ -439,12 +439,14 @@ static Status GetStatus(const State& state) {
   return state.turn == Color::kWhite ? Status::kWhiteToMove : Status::kBlackToMove;
 }
 
-static bool LegalMove(State& state, const Move& move) {
+bool LegalMove(State& state, const Move& move) {
   if (move.from == move.to || !CanMoveInTurn(state, move.from)) {
     return false;
   }
   auto& board = state.board;
-  for (const auto legalMove : GetLegalMoves(state, move.from)) {
+  auto legalMoves = std::vector<Move>{};
+  GetLegalMoves(state, move.from, legalMoves);
+  for (const auto legalMove : legalMoves) {
     if (legalMove == move) {
       MakeMove(state, legalMove);
       return true;
@@ -482,7 +484,9 @@ bool Game::MakeMove(const Move& move) {
 }
 
 std::vector<Move> Game::GetLegalMoves(Square square) const {
-  return chess::GetLegalMoves(state_, square);
+  auto legalMoves = std::vector<Move>{};
+  chess::GetLegalMoves(state_, square, legalMoves);
+  return legalMoves;
 }
 
 } // namespace chess
