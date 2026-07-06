@@ -1,6 +1,6 @@
 #pragma once
 
-#include "chess/game/state.h"
+#include "chess/core/state.h"
 #include "chess/core/move.h"
 
 #include <vector>

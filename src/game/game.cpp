@@ -1,43 +1,10 @@
 #include "chess/game/game.h"
+#include "chess/core/fen.h"
 
 namespace chess {
 
-static Board CreateDefaultBoard() {
-  auto board = Board{};
-
-  for (auto& row : board) {
-    for (auto& c : row) {
-      c = Piece::kNone;
-    }
-  }
-
-  board[_8][_A] = Piece::kBlackRook;
-  board[_8][_B] = Piece::kBlackKnight;
-  board[_8][_C] = Piece::kBlackBishop;
-  board[_8][_D] = Piece::kBlackQueen;
-  board[_8][_E] = Piece::kBlackKing;
-  board[_8][_F] = Piece::kBlackBishop;
-  board[_8][_G] = Piece::kBlackKnight;
-  board[_8][_H] = Piece::kBlackRook;
-
-  for (auto i = 0; i < kBoardSize; ++i) {
-    board[_7][i] = Piece::kBlackPawn;
-  }
-
-  for (auto i = 0; i < kBoardSize; ++i) {
-    board[_2][i] = Piece::kWhitePawn;
-  }
-
-  board[_1][_A] = Piece::kWhiteRook;
-  board[_1][_B] = Piece::kWhiteKnight;
-  board[_1][_C] = Piece::kWhiteBishop;
-  board[_1][_D] = Piece::kWhiteQueen;
-  board[_1][_E] = Piece::kWhiteKing;
-  board[_1][_F] = Piece::kWhiteBishop;
-  board[_1][_G] = Piece::kWhiteKnight;
-  board[_1][_H] = Piece::kWhiteRook;
-
-  return board;
+static State CreateDefaultState() {
+  return StateFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
 static bool IsValidSquare(int rank, int file) {
@@ -487,7 +454,7 @@ static bool LegalMove(State& state, const Move& move) {
 }
 
 Game::Game()
-  : state_{State{CreateDefaultBoard(), Color::kWhite, std::nullopt, true, true, true, true, 0, 0}} {
+  : state_{CreateDefaultState()} {
 }
 
 Game::Game(const State& state)
