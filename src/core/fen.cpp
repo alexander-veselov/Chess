@@ -112,7 +112,7 @@ State StateFromFEN(const std::string& fen) {
   for (; characterIndex < fen.size(); ++characterIndex) {
     const auto character = fen[characterIndex];
     if (character == ' ') {
-      ++characterIndex;
+      characterIndex += 1;
       break;
     }
     if (character == '/') {
@@ -135,23 +135,27 @@ State StateFromFEN(const std::string& fen) {
   state.whiteLongCastleAllowed = false;
   state.blackShortCastleAllowed = false;
   state.blackLongCastleAllowed = false;
-  for (; characterIndex < fen.size(); ++characterIndex) {
-    if (!ParseCastlingRights(state, fen[characterIndex])) {
-      ++characterIndex;
-      break;
+  if (fen[characterIndex] == '-') {
+    characterIndex += 2;
+  } else {
+    for (; characterIndex < fen.size(); ++characterIndex) {
+      if (!ParseCastlingRights(state, fen[characterIndex])) {
+        break;
+      }
     }
+    characterIndex += 1;
   }
-
+  
   // Possible en passant targets
   if (fen[characterIndex] == '-') {
     state.enPassant = std::nullopt;
-    ++characterIndex;
+    characterIndex += 2;
   } else {
-    const auto file = CharacterToFile(fen[characterIndex++]);
-    const auto rank = CharacterToRank(fen[characterIndex++]);
+    const auto file = CharacterToFile(fen[characterIndex + 0]);
+    const auto rank = CharacterToRank(fen[characterIndex + 1]);
     state.enPassant = Square{rank, file};
+    characterIndex += 3;
   }
-  ++characterIndex;
 
   // Halfmove clock
   state.halfmoveClock = std::atoi(fen.data() + characterIndex);

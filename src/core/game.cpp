@@ -4,7 +4,7 @@
 namespace chess {
 
 State CreateDefaultState() {
-  return StateFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+  return StateFromFEN("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0");
 }
 
 bool IsValidSquare(int rank, int file) {
@@ -134,14 +134,21 @@ bool IsAttacked(const State& state, Color turn, Square square) {
       const auto piece = state.board[rank][file];
       if (GetPieceColor(piece) == opponentColor) {
         auto moves = std::vector<Move>{};
-        const auto toSquare = Square{static_cast<Rank>(rank), static_cast<File>(file)};
-        if (toSquare == square) {
+        const auto fromSquare = Square{static_cast<Rank>(rank), static_cast<File>(file)};
+        if (fromSquare == square) {
           continue;
         }
-        if (GetBasePiece(piece) == BasePiece::kKing) {
-          GetKingMovesWithoutCastling(state, toSquare, moves);
+        const auto basePiece = GetBasePiece(piece);
+        if (basePiece == BasePiece::kKing) {
+          GetKingMovesWithoutCastling(state, fromSquare, moves);
         } else {
-          GetMoves(state, toSquare, moves);
+          GetMoves(state, fromSquare, moves);
+          // Special case for pawns. A pawn cannot capture an empty square, but still attacks it
+          if (basePiece == BasePiece::kPawn) {
+            const auto direction = opponentColor == Color::kWhite ? 1 : -1;
+            PushPawnIfEmpty(moves, state.board, fromSquare, direction, -1);
+            PushPawnIfEmpty(moves, state.board, fromSquare, direction, +1);
+          }
         }
         for (const auto& move : moves) {
           if (move.to == square) {
@@ -271,7 +278,7 @@ void GetPawnMoves(const State& state, Square square, std::vector<Move>& moves) {
   if (state.enPassant.has_value()) {
     const auto fileShift = state.enPassant->file - square.file;
     const auto rankShift = state.enPassant->rank - square.rank;
-    if (std::abs(fileShift) == 1 && std::abs(rankShift) == 1) {
+    if (std::abs(fileShift) == 1 && rankShift == direction) {
       PushIfEmptyOrOpposite(moves, state.board, square, state.enPassant.value());
     }
   }
@@ -331,9 +338,11 @@ bool CanMoveInTurn(const State& state, Square square) {
 }
 
 void UpdateCastlingState(State& state, const Move& move) {
-  const auto piece = state.board[move.from.rank][move.from.file];
-  const auto basePiece = GetBasePiece(piece);
-  if (basePiece == BasePiece::kKing) {
+  const auto fromPiece = state.board[move.from.rank][move.from.file];
+  const auto toPiece = state.board[move.to.rank][move.to.file];
+  const auto fromBasePiece = GetBasePiece(fromPiece);
+  const auto toBasePiece = GetBasePiece(toPiece);
+  if (fromBasePiece == BasePiece::kKing) {
     if (state.turn == Color::kWhite) {
       state.whiteShortCastleAllowed = false;
       state.whiteLongCastleAllowed = false;
@@ -341,7 +350,7 @@ void UpdateCastlingState(State& state, const Move& move) {
       state.blackShortCastleAllowed = false;
       state.blackLongCastleAllowed = false;
     }
-  } else if (basePiece == BasePiece::kRook) {
+  } else if (fromBasePiece == BasePiece::kRook) {
     if (move.from == Square{Rank::_1, File::_A}) {
       state.whiteLongCastleAllowed = false;
     } else if (move.from == Square{Rank::_1, File::_H}) {
@@ -351,6 +360,18 @@ void UpdateCastlingState(State& state, const Move& move) {
       state.blackLongCastleAllowed = false;
     }
     if (move.from == Square{Rank::_8, File::_H}) {
+      state.blackShortCastleAllowed = false;
+    }
+  } else if (toBasePiece == BasePiece::kRook) {
+    if (move.to == Square{Rank::_1, File::_A}) {
+      state.whiteLongCastleAllowed = false;
+    } else if (move.to == Square{Rank::_1, File::_H}) {
+      state.whiteShortCastleAllowed = false;
+    }
+    if (move.to == Square{Rank::_8, File::_A}) {
+      state.blackLongCastleAllowed = false;
+    }
+    if (move.to == Square{Rank::_8, File::_H}) {
       state.blackShortCastleAllowed = false;
     }
   }
