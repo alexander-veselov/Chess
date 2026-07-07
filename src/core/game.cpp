@@ -39,7 +39,7 @@ void EnPassantCapture(Board& board, Square from, Square to) {
 }
 
 std::optional<Square> EvaluateEnPassant(const Board& board, Square from, Square to) {
-  const auto piece = Get(board, to);
+  const auto piece = Get(board, from);
   if (piece == Piece::kBlackPawn || piece == Piece::kWhitePawn) {
     const auto rankShift = to.rank - from.rank;
     if (std::abs(rankShift) == 2) {
