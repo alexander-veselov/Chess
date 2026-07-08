@@ -4,7 +4,7 @@
 namespace chess {
 
 State CreateDefaultState() {
-  return chess::StateFromFEN("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1");
+  return chess::StateFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
 bool IsValidSquare(int rank, int file) {
@@ -114,9 +114,6 @@ bool PushIfEmptyOrOpposite(std::vector<Move>& moves, const Board& board, Square 
                                   int rankShift, int fileShift) {
   return PushIfEmptyOrOpposite(moves, board, square, ShiftSquare(square, rankShift, fileShift));
 }
-
-void GetMoves(const State& state, Square square, std::vector<Move>& moves);
-bool IsInCheck(const State& state, Color turn);
 
 void GetKingMovesWithoutCastling(const State& state, Square square, std::vector<Move>& moves) {
   PushIfEmptyOrOpposite(moves, state.board, square, -1, -1);
