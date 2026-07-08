@@ -30,6 +30,42 @@ static std::string_view StatusToString(Status status) {
   return "";
 }
 
+// TODO: implement properly
+static Game game{};
+static std::optional<Square> selected;
+
+static Status status;
+static bool statusNeedsRefresh = true;
+Status GetStatus() {
+  if (statusNeedsRefresh) {
+    status = game.GetStatus();
+    statusNeedsRefresh = false;
+  }
+  return status;
+}
+
+static std::vector<Move> legalMoves;
+static Square legalMovesSquare;
+static bool legalMovesNeedsRefresh = true;
+std::vector<Move> GetLegalMoves(Square square) {
+  if (legalMovesNeedsRefresh || !(square == legalMovesSquare)) {
+    legalMoves = game.GetLegalMoves(square);
+    legalMovesNeedsRefresh = false;
+    legalMovesSquare = square;
+  }
+  return legalMoves;
+}
+
+static bool isInCheck = false;
+static bool isInCheckNeedsRefresh = true;
+bool IsInCheck() {
+  if (isInCheckNeedsRefresh) {
+    isInCheck = game.IsInCheck();
+    isInCheckNeedsRefresh = false;
+  }
+  return isInCheck;
+}
+
 class ExampleLayer : public chess::Layer {
 public:
   void OnUIRender() override {
@@ -43,12 +79,9 @@ public:
     ImGui::Begin("Chess", nullptr,
                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
                      ImGuiWindowFlags_NoCollapse);
-    static Game game{};
-    static std::optional<Square> selected;
 
-    // TODO: don't call expensive GetStatus every frame
     ImGui::SetWindowFontScale(3.0f);
-    ImGui::Text("%s", StatusToString(game.GetStatus()).data());
+    ImGui::Text("%s", StatusToString(GetStatus()).data());
     ImGui::SetWindowFontScale(1.0f);
 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
@@ -100,6 +133,9 @@ private:
           move.promotion = std::nullopt;
         }
         game.MakeMove(move);
+        statusNeedsRefresh = true;
+        legalMovesNeedsRefresh = true;
+        isInCheckNeedsRefresh = true;
         fromSquare.reset();
       }
     }
@@ -127,8 +163,7 @@ private:
       ImVec2 p0(origin.x + ToFile(selected->file) * CellSize,
                 origin.y + ToRank(selected->rank) * CellSize);
       ImVec2 p1(p0.x + CellSize, p0.y + CellSize);
-      // TODO: don't call expensive GetLegalMoves every frame
-      for (const auto move : game.GetLegalMoves({selected->rank, selected->file})) {
+      for (const auto move : GetLegalMoves({selected->rank, selected->file})) {
         ImVec2 p3(origin.x + ToFile(move.to.file) * CellSize + CellSize / 2,
                   origin.y + ToRank(move.to.rank) * CellSize + CellSize / 2);
 
@@ -143,7 +178,7 @@ private:
       draw_list->AddRectFilled(p0, p1, IM_COL32(255, 255, 0, 80));
     }
 
-    if (game.IsInCheck()) {
+    if (IsInCheck()) {
       DrawCheck(draw_list, origin, game.GetState());
     }
     DrawPieces(draw_list, origin, board);
