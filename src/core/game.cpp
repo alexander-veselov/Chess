@@ -424,6 +424,16 @@ void GetLegalMoves(const State& state, Square square, std::vector<Move>& legalMo
   }
 }
 
+void GetAllLegalMoves(const State& state, std::vector<Move>& legalMoves) {
+  for (auto rank = 0; rank < kBoardSize; ++rank) {
+    for (auto file = 0; file < kBoardSize; ++file) {
+      if (GetPieceColor(state.board[rank][file]) == state.turn) {
+        GetLegalMoves(state, Square{static_cast<Rank>(rank), static_cast<File>(file)}, legalMoves);
+      }
+    }
+  }
+}
+
 bool CanMove(const State& state, Square square) {
   auto legalMoves = std::vector<Move>{};
   GetLegalMoves(state, square, legalMoves);

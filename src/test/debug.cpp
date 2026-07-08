@@ -3,12 +3,11 @@
 #include "chess/core/fen.h"
 #include "chess/core/game.h"
 #include "chess/core/move.h"
-#include "chess/test/perft.h"
+#include "chess/core/perft.h"
 #include "chess/test/stockfish.h"
-#include "chess/test/utils.h"
 
 static std::map<std::string, uint64_t>
-StorckfishPerft(const std::string& fen, const std::vector<chess::Move>& moves, uint32_t depth) {
+StorckfishDivide(const std::string& fen, const std::vector<chess::Move>& moves, uint32_t depth) {
   auto stockfish = chess::test::Stockfish("stockfish.exe");
   stockfish.Position(fen.data(), moves);
   return stockfish.Perft(depth);
@@ -16,7 +15,7 @@ StorckfishPerft(const std::string& fen, const std::vector<chess::Move>& moves, u
 
 static chess::Move MoveFromString(const std::string& string) {
   auto move = chess::Move{};
-  chess::test::ParseMove(string, move);
+  chess::ParseMove(string, move);
   return move;
 }
 
@@ -34,8 +33,8 @@ TEST(Chess, DISABLED_Debug) {
     MakeMove(state, move);
   }
 
-  const auto localPerft = chess::test::PerftDebug(state, kDepth);
-  const auto stockfishPerft = StorckfishPerft(fen.data(), moves, kDepth);
+  const auto localPerft = chess::Divide(state, kDepth);
+  const auto stockfishPerft = StorckfishDivide(fen.data(), moves, kDepth);
 
   for (const auto [move, count] : stockfishPerft) {
     auto it = localPerft.find(move);

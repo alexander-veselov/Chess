@@ -43,6 +43,7 @@ void UpdateCastlingState(State& state, const Move& move);
 void ProcessCastle(State& state, const Move& move);
 void MakeMove(State& state, const Move& move);
 void GetLegalMoves(const State& state, Square square, std::vector<Move>& legalMoves);
+void GetAllLegalMoves(const State& state, std::vector<Move>& legalMoves);
 bool CanMove(const State& state, Square square);
 bool HasAvailableMoves(const State& state);
 Status GetStatus(const State& state);

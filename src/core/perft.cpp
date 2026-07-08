@@ -1,19 +1,19 @@
 #pragma once
 
-#include "chess/test/perft.h"
-#include "chess/test/utils.h"
+#include "chess/core/perft.h"
+#include "chess/core/game.h"
+#include "chess/core/move.h"
 
 #include <iostream>
 
 namespace chess {
-namespace test {
 
 uint64_t Perft(const State& state, int32_t depth) {
   auto moves = std::vector<Move>{};
-  const auto nMoves = GetAllLegalMoves(state, moves);
+  GetAllLegalMoves(state, moves);
 
   if (depth == 1) {
-    return nMoves;
+    return moves.size();
   }
 
   auto nodes = uint64_t{0};
@@ -26,11 +26,11 @@ uint64_t Perft(const State& state, int32_t depth) {
   return nodes;
 }
 
-std::map<std::string, uint64_t> PerftDebug(const State& state, int32_t depth) {
+std::map<std::string, uint64_t> Divide(const State& state, int32_t depth) {
   auto result = std::map<std::string, uint64_t>{};
 
   auto moves = std::vector<Move>{};
-  const auto nMoves = GetAllLegalMoves(state, moves);
+  GetAllLegalMoves(state, moves);
 
   if (depth == 1) {
     for (const auto& move : moves) {
@@ -51,5 +51,4 @@ std::map<std::string, uint64_t> PerftDebug(const State& state, int32_t depth) {
   return result;
 }
 
-} // namespace test
 } // namespace chess
