@@ -34,12 +34,14 @@ void MoveOrCapture(Board& board, const Move& move) {
 }
 
 void EnPassantCapture(Board& board, Square from, Square to) {
-  const auto captureSquare = Square{from.rank, to.file};
-  board[captureSquare.rank][captureSquare.file] = Piece::kNone;
+  if (GetBasePiece(Get(board, to)) == BasePiece::kPawn) {
+    const auto captureSquare = Square{from.rank, to.file};
+    board[captureSquare.rank][captureSquare.file] = Piece::kNone;
+  }
 }
 
 std::optional<Square> EvaluateEnPassant(const Board& board, Square from, Square to) {
-  const auto piece = Get(board, from);
+  const auto piece = Get(board, to);
   if (piece == Piece::kBlackPawn || piece == Piece::kWhitePawn) {
     const auto rankShift = to.rank - from.rank;
     if (std::abs(rankShift) == 2) {

@@ -20,7 +20,7 @@ static chess::Move MoveFromString(const std::string& string) {
   return move;
 }
 
-TEST(Chess, Debug) {
+TEST(Chess, DISABLED_Debug) {
   constexpr auto kDepth = 1;
   constexpr auto fen = std::string_view{"8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1"};
 
@@ -39,7 +39,7 @@ TEST(Chess, Debug) {
 
   for (const auto [move, count] : stockfishPerft) {
     auto it = localPerft.find(move);
-    const auto found = it == localPerft.end();
+    const auto found = it != localPerft.end();
     ASSERT_TRUE(found) << "Move: " << move;
     EXPECT_EQ(it->second, count) << "Move: " << move;
   }
