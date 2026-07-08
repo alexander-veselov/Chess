@@ -1,6 +1,6 @@
 #pragma once
 
-#include "application.h"
+#include "chess/application/application.h"
 
 #include <memory>
 

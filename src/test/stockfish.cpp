@@ -1,6 +1,7 @@
 #include "chess/test/stockfish.h"
 #include "chess/test/utils.h"
 
+// TODO: make this file compile Windows only
 #include <Windows.h>
 
 #include <stdexcept>

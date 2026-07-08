@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(imgui CONFIG REQUIRED)
 find_package(lunasvg CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
+find_package(benchmark CONFIG REQUIRED)
 
 # Core library
 set(CORE_INCLUDE_FOLDER "include/core")
@@ -45,6 +46,16 @@ add_executable(Test ${TEST_HEADERS} ${TEST_SOURCES})
 target_include_directories(Test PUBLIC ${TEST_INCLUDE_FOLDER})
 target_link_libraries(Test PRIVATE Core GTest::gtest GTest::gtest_main)
 set_property(TARGET Test PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+
+# Benchmark executable
+set(BENCHMARK_INCLUDE_FOLDER "include/benchmark")
+set(BENCHMARK_SOURCE_FOLDER "src/benchmark")
+file(GLOB BENCHMARK_HEADERS ${BENCHMARK_INCLUDE_FOLDER}/chess/benchmark/*.h)
+file(GLOB BENCHMARK_SOURCES ${BENCHMARK_SOURCE_FOLDER}/*.cpp)
+add_executable(Benchmark ${BENCHMARK_HEADERS} ${BENCHMARK_SOURCES})
+target_include_directories(Benchmark PUBLIC ${BENCHMARK_INCLUDE_FOLDER})
+target_link_libraries(Benchmark PRIVATE Core benchmark::benchmark benchmark::benchmark_main)
+set_property(TARGET Benchmark PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Application)
 

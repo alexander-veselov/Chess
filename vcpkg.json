@@ -1,5 +1,6 @@
 {
   "dependencies": [
+    "gtest",
     {
       "name": "imgui",
       "features": [
@@ -8,6 +9,6 @@
       ]
     },
     "lunasvg",
-    "gtest"
+    "benchmark"
   ]
 }

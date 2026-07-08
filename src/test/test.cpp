@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 #include "chess/core/fen.h"
 #include "chess/core/state.h"
