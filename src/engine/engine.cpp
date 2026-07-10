@@ -77,7 +77,8 @@ static float_t EvaluateState(const State& state, Status status, uint32_t depth, 
   return score + ScorePenalty(score, depth, maxDepth);
 }
 
-static float_t Minimax(const State& state, uint32_t depth, uint32_t maxDepth) {
+static float_t Minimax(const State& state, float_t alpha, float_t beta, uint32_t depth,
+                       uint32_t maxDepth) {
   const auto status = GetStatus(state);
   if (depth == 0 || IsGameOver(status)) {
     return EvaluateState(state, status, depth, maxDepth);
@@ -90,14 +91,22 @@ static float_t Minimax(const State& state, uint32_t depth, uint32_t maxDepth) {
     for (const auto& move : moves) {
       auto childState = State{state};
       MakeMove(childState, move);
-      value = std::max(value, Minimax(childState, depth - 1, maxDepth));
+      value = std::max(value, Minimax(childState, alpha, beta, depth - 1, maxDepth));
+      if (value >= beta) {
+        break;
+      }
+      alpha = std::max(alpha, value);
     }
   } else {
     value = +kMaxScore;
     for (const auto& move : moves) {
       auto childState = State{state};
       MakeMove(childState, move);
-      value = std::min(value, Minimax(childState, depth - 1, maxDepth));
+      value = std::min(value, Minimax(childState, alpha, beta, depth - 1, maxDepth));
+      if (value <= alpha) {
+        break;
+      }
+      beta = std::min(beta, value);
     }
   }
   return value;
@@ -107,6 +116,8 @@ Move BestMove(const State& state, uint32_t depth) {
   auto bestValue = 0.f;
   auto bestMove = Move{};
   auto moves = std::vector<Move>{};
+  auto alpha = -kMaxScore;
+  auto beta = +kMaxScore;
   GetAllLegalMoves(state, moves);
   if (!moves.empty()) {
     bestMove = moves[0];
@@ -116,22 +127,30 @@ Move BestMove(const State& state, uint32_t depth) {
     for (const auto& move : moves) {
       auto childState = State{state};
       MakeMove(childState, move);
-      auto newValue = Minimax(childState, depth - 1, depth - 1);
+      auto newValue = Minimax(childState, alpha, beta, depth - 1, depth - 1);
       if (newValue > bestValue) {
         bestValue = newValue;
         bestMove = move;
       }
+      if (newValue >= beta) {
+        break;
+      }
+      alpha = std::max(alpha, newValue);
     }
   } else {
     bestValue = +kMaxScore;
     for (const auto& move : moves) {
       auto childState = State{state};
       MakeMove(childState, move);
-      auto newValue = Minimax(childState, depth - 1, depth - 1);
+      auto newValue = Minimax(childState, alpha, beta, depth - 1, depth - 1);
       if (newValue < bestValue) {
         bestValue = newValue;
         bestMove = move;
       }
+      if (newValue <= alpha) {
+        break;
+      }
+      beta = std::min(beta, newValue);
     }
   }
   return bestMove;
