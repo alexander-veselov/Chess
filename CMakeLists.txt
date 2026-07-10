@@ -25,6 +25,7 @@ set(ENGINE_SOURCE_FOLDER "src/engine")
 file(GLOB ENGINE_HEADERS ${ENGINE_INCLUDE_FOLDER}/chess/engine/*.h)
 file(GLOB ENGINE_SOURCES ${ENGINE_SOURCE_FOLDER}/*.cpp)
 add_library(Engine STATIC ${ENGINE_HEADERS} ${ENGINE_SOURCES})
+target_link_libraries(Engine PRIVATE Core)
 target_include_directories(Engine PUBLIC ${ENGINE_INCLUDE_FOLDER})
 
 # Application executable
@@ -34,7 +35,7 @@ file(GLOB APPLICATION_HEADERS ${APPLICATION_INCLUDE_FOLDER}/chess/application/*.
 file(GLOB APPLICATION_SOURCES ${APPLICATION_SOURCE_FOLDER}/*.cpp)
 add_executable(Application ${APPLICATION_HEADERS} ${APPLICATION_SOURCES})
 target_include_directories(Application PUBLIC ${APPLICATION_INCLUDE_FOLDER})
-target_link_libraries(Application PRIVATE imgui::imgui lunasvg::lunasvg opengl32 Core)
+target_link_libraries(Application PRIVATE imgui::imgui lunasvg::lunasvg opengl32 Core Engine)
 set_property(TARGET Application PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
 # Test executable

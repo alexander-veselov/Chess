@@ -4,6 +4,8 @@
 #include "chess/core/board.h"
 #include "chess/core/game.h"
 
+#include "chess/engine/engine.h"
+
 #include <optional>
 #include <unordered_map>
 
@@ -80,8 +82,9 @@ public:
                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
                      ImGuiWindowFlags_NoCollapse);
 
+    const auto status = GetStatus();
     ImGui::SetWindowFontScale(3.0f);
-    ImGui::Text("%s", StatusToString(GetStatus()).data());
+    ImGui::Text("%s", StatusToString(status).data());
     ImGui::SetWindowFontScale(1.0f);
 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
@@ -89,6 +92,14 @@ public:
 
     HandleInput(game, selected, origin);
     DrawBoard(draw_list, game, origin, selected);
+
+    if (status == Status::kBlackToMove) {
+      const auto engineMove = BestMove(game.GetState());
+      game.MakeMove(engineMove);
+      statusNeedsRefresh = true;
+      legalMovesNeedsRefresh = true;
+      isInCheckNeedsRefresh = true;
+    }
 
     ImGui::End();
     ImGui::PopStyleVar();

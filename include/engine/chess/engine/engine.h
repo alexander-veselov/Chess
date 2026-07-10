@@ -1,7 +1,10 @@
 #pragma once
 
+#include "chess/core/state.h"
+#include "chess/core/move.h"
+
 namespace chess {
 
-void EngineDummy();
+Move BestMove(const State& state);
 
 }
