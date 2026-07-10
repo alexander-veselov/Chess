@@ -34,11 +34,34 @@ static Piece CharacterToPiece(char character) {
   return Piece::kNone;
 }
 
-static Square IndexToSquare(size_t index) {
-  return Square{
-      static_cast<Rank>((kBoardSize * kBoardSize - index - 1) / kBoardSize),
-      static_cast<File>(kBoardSize - (kBoardSize * kBoardSize - index - 1) % kBoardSize - 1),
-  };
+static char PieceToCharacter(Piece piece) {
+  switch (piece) {
+  case Piece::kBlackRook:
+    return 'r';
+  case Piece::kBlackKnight:
+    return 'n';
+  case Piece::kBlackBishop:
+    return 'b';
+  case Piece::kBlackQueen:
+    return 'q';
+  case Piece::kBlackKing:
+    return 'k';
+  case Piece::kBlackPawn:
+    return 'p';
+  case Piece::kWhiteRook:
+    return 'R';
+  case Piece::kWhiteKnight:
+    return 'N';
+  case Piece::kWhiteBishop:
+    return 'B';
+  case Piece::kWhiteQueen:
+    return 'Q';
+  case Piece::kWhiteKing:
+    return 'K';
+  case Piece::kWhitePawn:
+    return 'P';
+  }
+  return '\0';
 }
 
 static size_t CharacterToDigit(char character) {
@@ -55,32 +78,30 @@ static Color CharacterToColor(char character) {
   return Color::kNone;
 }
 
+static char ColorToCharacter(Color color) {
+  switch (color) {
+  case Color::kWhite:
+    return 'w';
+  case Color::kBlack:
+    return 'b';
+  }
+  return '\0';
+}
+
 static Rank CharacterToRank(char character) {
   return static_cast<Rank>(CharacterToDigit(character) - 1);
 }
 
 static File CharacterToFile(char character) {
-  switch (character) {
-  case 'a':
-    return File::_A;
-  case 'b':
-    return File::_B;
-  case 'c':
-    return File::_C;
-  case 'd':
-    return File::_D;
-  case 'e':
-    return File::_E;
-  case 'f':
-    return File::_F;
-  case 'g':
-    return File::_G;
-  case 'h':
-    return File::_H;
-  }
+  return static_cast<File>(character - 'a' + File::_A);
+}
 
-  // TODO: print error
-  return File::_A;
+static char RankToCharacter(Rank rank) {
+  return '1' + rank;
+}
+
+static char FileToCharacter(File file) {
+  return 'a' + file;
 }
 
 static bool ParseCastlingRights(State& state, char character) {
@@ -101,6 +122,33 @@ static bool ParseCastlingRights(State& state, char character) {
     return false;
   }
   return true;
+}
+
+static std::string CastlingRightsToString(const State& state) {
+  auto result = std::string{};
+  if (state.whiteShortCastleAllowed) {
+    result += 'K';
+  }
+  if (state.whiteLongCastleAllowed) {
+    result += 'Q';
+  }
+  if (state.blackShortCastleAllowed) {
+    result += 'k';
+  }
+  if (state.blackLongCastleAllowed) {
+    result += 'q';
+  }
+  if (result.empty()) {
+    return "-";
+  }
+  return result;
+}
+
+static Square IndexToSquare(size_t index) {
+  return Square{
+      static_cast<Rank>((kBoardSize * kBoardSize - index - 1) / kBoardSize),
+      static_cast<File>(kBoardSize - (kBoardSize * kBoardSize - index - 1) % kBoardSize - 1),
+  };
 }
 
 State StateFromFEN(const std::string& fen) {
@@ -170,6 +218,54 @@ State StateFromFEN(const std::string& fen) {
   state.fullmoveNumber = std::atoi(fen.data() + characterIndex);
 
   return state;
+}
+
+std::string FENFromState(const State& state) {
+  auto fen = std::string{};
+  for (auto rank = int32_t{chess::Rank::_8}; rank >= int32_t{chess::Rank::_1}; --rank) {
+    auto emptySquares = 0;
+    for (auto file = int32_t{chess::File::_A}; file <= int32_t{chess::File::_H}; ++file) {
+      const auto piece = state.board[rank][file];
+      if (piece == Piece::kNone) {
+        ++emptySquares;
+      } else {
+        if (emptySquares != 0) {
+          fen += std::to_string(emptySquares);
+          emptySquares = 0;
+        }
+        fen += PieceToCharacter(piece);
+      }
+    }
+    if (emptySquares != 0) {
+      fen += std::to_string(emptySquares);
+      emptySquares = 0;
+    }
+    if (rank != int32_t{chess::Rank::_1}) {
+      fen += '/';
+    }
+  }
+
+  fen += " ";
+  fen += ColorToCharacter(state.turn);
+
+  fen += " ";
+  fen += CastlingRightsToString(state);
+
+  fen += " ";
+  if (state.enPassant.has_value()) {
+    fen += FileToCharacter(state.enPassant->file);
+    fen += RankToCharacter(state.enPassant->rank);
+  } else {
+    fen += "-";
+  }
+
+  fen += " ";
+  fen += std::to_string(state.halfmoveClock);
+
+  fen += " ";
+  fen += std::to_string(state.fullmoveNumber);
+  
+  return fen;
 }
 
 } // namespace chess

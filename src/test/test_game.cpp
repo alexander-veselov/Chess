@@ -6,11 +6,11 @@
 
 namespace {
 constexpr auto kPosition1 = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-constexpr auto kPosition2 = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
-constexpr auto kPosition3 = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1 ";
+constexpr auto kPosition2 = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1";
+constexpr auto kPosition3 = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1";
 constexpr auto kPosition4 = "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1";
-constexpr auto kPosition5 = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ";
-constexpr auto kPosition6 = "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10 ";
+constexpr auto kPosition5 = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8";
+constexpr auto kPosition6 = "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10";
 }
 
 TEST(Chess, FEN_Empty) {
@@ -35,6 +35,48 @@ TEST(Chess, FEN_Default) {
   EXPECT_EQ(state.blackLongCastleAllowed, true);
   EXPECT_EQ(state.halfmoveClock, 0);
   EXPECT_EQ(state.fullmoveNumber, 1);
+}
+
+TEST(Chess, FEN_ViseVersa1) {
+  const auto expectedFen = kPosition1;
+  const auto state = chess::StateFromFEN(expectedFen);
+  const auto actualFen = chess::FENFromState(state);
+  EXPECT_EQ(expectedFen, actualFen);
+}
+
+TEST(Chess, FEN_ViseVersa2) {
+  const auto expectedFen = kPosition2;
+  const auto state = chess::StateFromFEN(expectedFen);
+  const auto actualFen = chess::FENFromState(state);
+  EXPECT_EQ(expectedFen, actualFen);
+}
+
+TEST(Chess, FEN_ViseVersa3) {
+  const auto expectedFen = kPosition3;
+  const auto state = chess::StateFromFEN(expectedFen);
+  const auto actualFen = chess::FENFromState(state);
+  EXPECT_EQ(expectedFen, actualFen);
+}
+
+TEST(Chess, FEN_ViseVersa4) {
+  const auto expectedFen = kPosition4;
+  const auto state = chess::StateFromFEN(expectedFen);
+  const auto actualFen = chess::FENFromState(state);
+  EXPECT_EQ(expectedFen, actualFen);
+}
+
+TEST(Chess, FEN_ViseVersa5) {
+  const auto expectedFen = kPosition5;
+  const auto state = chess::StateFromFEN(expectedFen);
+  const auto actualFen = chess::FENFromState(state);
+  EXPECT_EQ(expectedFen, actualFen);
+}
+
+TEST(Chess, FEN_ViseVersa6) {
+  const auto expectedFen = kPosition6;
+  const auto state = chess::StateFromFEN(expectedFen);
+  const auto actualFen = chess::FENFromState(state);
+  EXPECT_EQ(expectedFen, actualFen);
 }
 
 TEST(Chess, FEN_EnPassant) {
