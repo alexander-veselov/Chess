@@ -377,3 +377,12 @@ TEST(Chess, DISABLED_PerftPosition6Depth5) {
 
   EXPECT_EQ(result, kNodes);
 }
+
+TEST(Chess, PerftTwoKings) {
+  constexpr auto kDepth = 6;
+  constexpr auto kNodes = 903346;
+  const auto state = chess::StateFromFEN("8/3pp3/5k2/8/8/5K2/3PP3/8 w - - 0 1");
+  const auto result = chess::Perft(state, kDepth);
+
+  EXPECT_EQ(result, kNodes);
+}

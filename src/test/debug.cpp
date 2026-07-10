@@ -20,13 +20,13 @@ static chess::Move MoveFromString(const std::string& string) {
 }
 
 TEST(Chess, DISABLED_Debug) {
-  constexpr auto kDepth = 1;
-  constexpr auto fen = std::string_view{"8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1"};
+  constexpr auto kDepth = 6;
+  constexpr auto fen = std::string_view{"8/3pp3/5k2/8/8/5K2/3PP3/8 w - - 0 1"};
 
   auto moves = std::vector<chess::Move>{};
-  moves.push_back(MoveFromString("g2g4"));
-  moves.push_back(MoveFromString("h4g3"));
-  moves.push_back(MoveFromString("e2e4"));
+  //moves.push_back(MoveFromString("g2g4"));
+  //moves.push_back(MoveFromString("h4g3"));
+  //moves.push_back(MoveFromString("e2e4"));
 
   auto state = chess::StateFromFEN(fen.data());
   for (const auto& move : moves) {
@@ -35,6 +35,18 @@ TEST(Chess, DISABLED_Debug) {
 
   const auto localPerft = chess::Divide(state, kDepth);
   const auto stockfishPerft = StorckfishDivide(fen.data(), moves, kDepth);
+
+  auto localCount = 0ull;
+  for (const auto [move, count] : localPerft) {
+    localCount += count;
+  }
+
+  auto stockfishCount = 0ull;
+  for (const auto [move, count] : stockfishPerft) {
+    stockfishCount += count;
+  }
+
+  EXPECT_EQ(localCount, stockfishCount);
 
   for (const auto [move, count] : stockfishPerft) {
     auto it = localPerft.find(move);

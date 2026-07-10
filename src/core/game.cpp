@@ -317,10 +317,14 @@ bool IsInCheck(const State& state, Color turn) {
   const auto opponentColor = SwitchColor(turn);
   for (auto rank = 0; rank < kBoardSize; ++rank) {
     for (auto file = 0; file < kBoardSize; ++file) {
-      if (GetPieceColor(state.board[rank][file]) == opponentColor &&
-          GetBasePiece(state.board[rank][file]) != BasePiece::kKing) {
+      if (GetPieceColor(state.board[rank][file]) == opponentColor) {
+        const auto square = Square{static_cast<Rank>(rank), static_cast<File>(file)};
         auto moves = std::vector<Move>{};
-        GetMoves(state, Square{static_cast<Rank>(rank), static_cast<File>(file)}, moves);
+        if (GetBasePiece(state.board[rank][file]) == BasePiece::kKing) {
+          GetKingMovesWithoutCastling(state, square, moves);
+        } else {
+          GetMoves(state, square, moves);
+        }
         for (const auto& move : moves) {
           if (GetBasePiece(state.board[move.to.rank][move.to.file]) == BasePiece::kKing) {
             return true;
