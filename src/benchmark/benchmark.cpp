@@ -10,35 +10,35 @@
 // 
 // Position          Depth    Nodes/s
 // 
-// PerftPosition1    1        1.03790 M/s
-// PerftPosition1    2        944.071 k/s
-// PerftPosition1    3        943.216 k/s
-// PerftPosition1    4        912.722 k/s
+// PerftPosition1    1        1.03885M/s
+// PerftPosition1    2        909.241k/s
+// PerftPosition1    3        949.547k/s
+// PerftPosition1    4        870.758k/s
 // 
-// PerftPosition2    1        687.453 k/s
-// PerftPosition2    2        599.159 k/s
-// PerftPosition2    3        666.294 k/s
-// PerftPosition2    4        603.877 k/s
+// PerftPosition2    1        665.507k/s
+// PerftPosition2    2        571.095k/s
+// PerftPosition2    3        640.551k/s
+// PerftPosition2    4        582.358k/s
 // 
-// PerftPosition3    1        1.90061 M/s
-// PerftPosition3    2        1.57366 M/s
-// PerftPosition3    3        1.77199 M/s
-// PerftPosition3    4        1.74599 M/s
+// PerftPosition3    1        1.51189M/s
+// PerftPosition3    2        1.30863M/s
+// PerftPosition3    3        1.31913M/s
+// PerftPosition3    4        1.39916M/s
 // 
-// PerftPosition4    1        195.491 k/s
-// PerftPosition4    2        623.066 k/s
-// PerftPosition4    3        626.781 k/s
-// PerftPosition4    4        635.984 k/s
+// PerftPosition4    1        193.294k/s
+// PerftPosition4    2        580.096k/s
+// PerftPosition4    3        619.658k/s
+// PerftPosition4    4        614.303k/s
 // 
-// PerftPosition5    1        796.448 k/s
-// PerftPosition5    2        637.945 k/s
-// PerftPosition5    3        729.767 k/s
-// PerftPosition5    4        620.383 k/s
+// PerftPosition5    1        787.499k/s
+// PerftPosition5    2        605.207k/s
+// PerftPosition5    3        737.699k/s
+// PerftPosition5    4        598.325k/s
 // 
-// PerftPosition6    1        634.092 k/s
-// PerftPosition6    2        615.384 k/s
-// PerftPosition6    3        618.598 k/s
-// PerftPosition6    4        647.413 k/s
+// PerftPosition6    1        644.306k/s
+// PerftPosition6    2        622.457k/s
+// PerftPosition6    3        653.745k/s
+// PerftPosition6    4        640.756k/s
 
 static void Perft(benchmark::State& state, std::string_view position, uint32_t depth) {
   const auto gameState = chess::StateFromFEN(position.data());
