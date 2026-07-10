@@ -45,7 +45,7 @@ file(GLOB TEST_HEADERS ${TEST_INCLUDE_FOLDER}/chess/test/*.h)
 file(GLOB TEST_SOURCES ${TEST_SOURCE_FOLDER}/*.cpp)
 add_executable(Test ${TEST_HEADERS} ${TEST_SOURCES})
 target_include_directories(Test PUBLIC ${TEST_INCLUDE_FOLDER})
-target_link_libraries(Test PRIVATE Core GTest::gtest GTest::gtest_main)
+target_link_libraries(Test PRIVATE Core Engine GTest::gtest GTest::gtest_main)
 set_property(TARGET Test PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
 # Benchmark executable

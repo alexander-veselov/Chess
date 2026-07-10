@@ -1,19 +1,25 @@
 #include "chess/engine/engine.h"
 #include "chess/core/game.h"
 
+namespace {
+
+constexpr auto kMaxScore = 999.f;
+
+}
+
 namespace chess {
 
 static float_t EvaluateBasePiece(BasePiece basePiece) {
   switch (basePiece) {
   case BasePiece::kPawn:
-    return 1;
+    return 1.f;
   case BasePiece::kBishop:
   case BasePiece::kKnight:
-    return 3;
+    return 3.f;
   case BasePiece::kRook:
-    return 5;
+    return 5.f;
   case BasePiece::kQueen:
-    return 9;
+    return 9.f;
   }
   return 0.f;
 }
@@ -23,9 +29,9 @@ static float_t EvaluatePiece(Piece piece) {
   return GetPieceColor(piece) == Color::kWhite ? +baseValue : -baseValue;
 }
 
-static float_t EvaluateBoard(const State& state) {
+static float_t EvaluateBoard(const Board& board) {
   auto value = 0.f;
-  for (const auto& row : state.board) {
+  for (const auto& row : board) {
     for (const auto piece : row) {
       value += EvaluatePiece(piece);
     }
@@ -33,69 +39,95 @@ static float_t EvaluateBoard(const State& state) {
   return value;
 }
 
-static float_t EvaluateState(const State& state) {
-  const auto status = GetStatus(state);
+static bool IsGameOver(Status status) {
   switch (status) {
   case Status::kWhiteToMove:
   case Status::kBlackToMove:
-    return EvaluateBoard(state);
+    return false;
   case Status::kWhiteWon:
-    return +999.f;
   case Status::kBlackWon:
-    return -999.f;
   case Status::kDraw:
-    return 0.f;
+    return true;
+  }
+  return true;
+}
+
+static float_t GameOverScore(Status status) {
+  switch (status) {
+  case Status::kWhiteWon:
+    return +kMaxScore;
+  case Status::kBlackWon:
+    return -kMaxScore;
   }
   return 0.f;
 }
 
-static float_t Minimax(const State& state, uint32_t depth) {
-  if (depth == 0) {
-    return EvaluateState(state);
+static float_t ScorePenalty(float_t score, uint32_t depth, uint32_t maxDepth) {
+  const auto penalty = static_cast<float_t>(maxDepth) - static_cast<float_t>(depth);
+  return score > 0.f ? -penalty : +penalty;
+}
+
+static float_t EvaluateState(const State& state, Status status, uint32_t depth, uint32_t maxDepth) {
+  auto score = 0.f;
+  if (IsGameOver(status)) {
+    score = GameOverScore(status);
+  } else {
+    score = EvaluateBoard(state.board);
+  }
+  return score + ScorePenalty(score, depth, maxDepth);
+}
+
+static float_t Minimax(const State& state, uint32_t depth, uint32_t maxDepth) {
+  const auto status = GetStatus(state);
+  if (depth == 0 || IsGameOver(status)) {
+    return EvaluateState(state, status, depth, maxDepth);
   }
   auto value = 0.f;
   auto moves = std::vector<Move>{};
   GetAllLegalMoves(state, moves);
   if (state.turn == Color::kWhite) {
-    value = -999.f;
+    value = -kMaxScore;
     for (const auto& move : moves) {
       auto childState = State{state};
       MakeMove(childState, move);
-      value = std::max(value, Minimax(childState, depth - 1));
+      value = std::max(value, Minimax(childState, depth - 1, maxDepth));
     }
   } else {
-    value = +999.f;
+    value = +kMaxScore;
     for (const auto& move : moves) {
       auto childState = State{state};
       MakeMove(childState, move);
-      value = std::min(value, Minimax(childState, depth - 1));
+      value = std::min(value, Minimax(childState, depth - 1, maxDepth));
     }
   }
   return value;
 }
 
-Move BestMove(const State& state) {
+Move BestMove(const State& state, uint32_t depth) {
   auto bestValue = 0.f;
   auto bestMove = Move{};
   auto moves = std::vector<Move>{};
   GetAllLegalMoves(state, moves);
+  if (!moves.empty()) {
+    bestMove = moves[0];
+  }
   if (state.turn == Color::kWhite) {
-    bestValue = -999.f;
+    bestValue = -kMaxScore;
     for (const auto& move : moves) {
       auto childState = State{state};
       MakeMove(childState, move);
-      auto newValue = Minimax(childState, 3);
+      auto newValue = Minimax(childState, depth - 1, depth - 1);
       if (newValue > bestValue) {
         bestValue = newValue;
         bestMove = move;
       }
     }
   } else {
-    bestValue = +999.f;
+    bestValue = +kMaxScore;
     for (const auto& move : moves) {
       auto childState = State{state};
       MakeMove(childState, move);
-      auto newValue = Minimax(childState, 3);
+      auto newValue = Minimax(childState, depth - 1, depth - 1);
       if (newValue < bestValue) {
         bestValue = newValue;
         bestMove = move;
