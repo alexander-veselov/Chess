@@ -61,6 +61,9 @@ static float_t GameOverScore(Status status) {
 }
 
 static float_t ScorePenalty(float_t score, uint32_t depth, uint32_t maxDepth) {
+  if (score == 0.f) {
+    return 0.f;
+  }
   const auto penalty = static_cast<float_t>(maxDepth) - static_cast<float_t>(depth);
   return score > 0.f ? -penalty : +penalty;
 }
@@ -76,64 +79,53 @@ static float_t EvaluateState(const State& state, Status status, uint32_t depth, 
   return score;
 }
 
-static float_t DebugMinimax(const State& state, float_t alpha, float_t beta, uint32_t depth,
-                       uint32_t maxDepth, std::vector<Move>& outMoves) {
+static float_t Quiesce(const State& state, float_t alpha, float_t beta, uint32_t depth,
+                       uint32_t maxDepth) {
   const auto status = GetStatus(state);
+  auto value = EvaluateState(state, status, depth, maxDepth);
   if (depth == 0 || IsGameOver(status)) {
-    return EvaluateState(state, status, depth, maxDepth);
+    return value;
   }
   auto moves = std::vector<Move>{};
   GetAllLegalMoves(state, moves);
-  auto bestValue = 0.f;
-  auto bestMove = moves[0]; // Should be safe because of IsGameOver check
-  auto bestMoves = std::vector<Move>{};
   if (state.turn == Color::kWhite) {
-    bestValue = -kMaxScore;
     for (const auto& move : moves) {
+      if (state.board[move.to] == Piece::kNone) {
+        continue;
+      }
       auto childState = State{state};
       MakeMove(childState, move);
-      auto currentBestMoves = std::vector<Move>{};
-      const auto value =
-          DebugMinimax(childState, alpha, beta, depth - 1, maxDepth, currentBestMoves);
-      if (value > bestValue) {
-        bestValue = value;
-        bestMove = move;
-        bestMoves = currentBestMoves;
-      }
-      if (bestValue >= beta) {
+      value = std::max(value, Quiesce(childState, alpha, beta, depth - 1, maxDepth));
+      if (value >= beta) {
         break;
       }
-      alpha = std::max(alpha, bestValue);
+      alpha = std::max(alpha, value);
     }
   } else {
-    bestValue = +kMaxScore;
     for (const auto& move : moves) {
+      if (state.board[move.to] == Piece::kNone) {
+        continue;
+      }
       auto childState = State{state};
       MakeMove(childState, move);
-      auto currentBestMoves = std::vector<Move>{};
-      const auto value =
-          DebugMinimax(childState, alpha, beta, depth - 1, maxDepth, currentBestMoves);
-      if (value < bestValue) {
-        bestValue = value;
-        bestMove = move;
-        bestMoves = currentBestMoves;
-      }
-      if (bestValue <= alpha) {
+      value = std::min(value, Quiesce(childState, alpha, beta, depth - 1, maxDepth));
+      if (value <= alpha) {
         break;
       }
-      beta = std::min(beta, bestValue);
+      beta = std::min(beta, value);
     }
   }
-  outMoves = bestMoves;
-  outMoves.push_back(bestMove);
-  return bestValue;
+  return value;
 }
 
 static float_t Minimax(const State& state, float_t alpha, float_t beta, uint32_t depth,
                        uint32_t maxDepth) {
   const auto status = GetStatus(state);
-  if (depth == 0 || IsGameOver(status)) {
+  if (IsGameOver(status)) {
     return EvaluateState(state, status, depth, maxDepth);
+  }
+  if (depth == 0) {
+    return Quiesce(state, alpha, beta, maxDepth, maxDepth);
   }
   auto value = 0.f;
   auto moves = std::vector<Move>{};
