@@ -120,14 +120,14 @@ private:
 
     const Board& board = game.GetState().board;
 
-    Piece toPiece = board[toSquare.rank][toSquare.file];
+    Piece toPiece = board[toSquare];
 
     if (!fromSquare) {
       if (toPiece != Piece::kNone && game.CanMove(toSquare)) {
         fromSquare = toSquare;
       }
     } else {
-      Piece fromPiece = board[fromSquare->rank][fromSquare->file];
+      Piece fromPiece = board[*fromSquare];
       if (toSquare == *fromSquare) {
         fromSquare = std::nullopt;
       } else if (GetPieceColor(toPiece) == GetPieceColor(fromPiece)) {
@@ -137,7 +137,7 @@ private:
         move.from = *fromSquare;
         move.to = toSquare;
         if (GetBasePiece(fromPiece) == BasePiece::kPawn &&
-            (toSquare.rank == Rank::_1 || toSquare.rank == Rank::_8)) {
+            (GetRank(toSquare) == Rank::_1 || GetRank(toSquare) == Rank::_8)) {
           move.promotion = MakePiece(GetPieceColor(fromPiece),
                                      BasePiece::kQueen); // TODO: implement promotion GUI
         } else {
@@ -171,15 +171,15 @@ private:
     const auto& board = game.GetState().board;
 
     if (selected) {
-      ImVec2 p0(origin.x + ToFile(selected->file) * CellSize,
-                origin.y + ToRank(selected->rank) * CellSize);
+      ImVec2 p0(origin.x + ToFile(GetFile(*selected)) * CellSize,
+                origin.y + ToRank(GetRank(*selected)) * CellSize);
       ImVec2 p1(p0.x + CellSize, p0.y + CellSize);
-      for (const auto move : GetLegalMoves({selected->rank, selected->file})) {
-        ImVec2 p3(origin.x + ToFile(move.to.file) * CellSize + CellSize / 2,
-                  origin.y + ToRank(move.to.rank) * CellSize + CellSize / 2);
+      for (const auto move : GetLegalMoves(*selected)) {
+        ImVec2 p3(origin.x + ToFile(GetFile(move.to)) * CellSize + CellSize / 2,
+                  origin.y + ToRank(GetRank(move.to)) * CellSize + CellSize / 2);
 
         const auto color = IM_COL32(0, 0, 0, 64);
-        if (board[move.to.rank][move.to.file] != Piece::kNone) {
+        if (board[move.to] != Piece::kNone) {
           const auto thickness = CellSize / 12.f;
           draw_list->AddCircle(p3, CellSize / 2.f - thickness / 2.f + 1.f, color, 0, thickness);
         } else {
@@ -199,7 +199,7 @@ private:
     const auto king = state.turn == Color::kWhite ? Piece::kWhiteKing : Piece::kBlackKing;
     for (int y = 0; y < kBoardSize; y++) {
       for (int x = 0; x < kBoardSize; x++) {
-        if (state.board[y][x] != king) {
+        if (state.board[MakeSquare(static_cast<File>(x), static_cast<Rank>(y))] != king) {
           continue;
         }
         ImVec2 p(origin.x + ToFile(x) * CellSize + CellSize / 2,
@@ -229,7 +229,8 @@ private:
 
     for (int y = 0; y < kBoardSize; y++) {
       for (int x = 0; x < kBoardSize; x++) {
-        Piece p = board[y][x];
+        const auto square = MakeSquare(static_cast<File>(x), static_cast<Rank>(y));
+        Piece p = board[square];
         if (p == Piece::kNone) {
           continue;
         }
@@ -260,11 +261,11 @@ private:
     int x = (int)((mouse.x - origin.x) / CellSize);
     int y = (int)((mouse.y - origin.y) / CellSize);
 
-    return Square{ToRank(y), ToFile(x)};
+    return MakeSquare(ToFile(x), ToRank(y));
   }
 
   bool IsValidSquare(const Square& s) {
-    return s.file >= 0 && s.file < kBoardSize && s.rank >= 0 && s.rank < kBoardSize;
+    return GetFile(s) >= 0 && GetFile(s) < kBoardSize && GetRank(s) >= 0 && GetRank(s) < kBoardSize;
   }
 };
 

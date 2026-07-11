@@ -82,8 +82,7 @@ TEST(Chess, FEN_ViseVersa6) {
 TEST(Chess, FEN_EnPassant) {
   const auto state = chess::StateFromFEN("8/8/8/2k5/2pP4/8/B7/4K3 b - d3 0 3");
   ASSERT_NE(state.enPassant, std::nullopt);
-  EXPECT_EQ(state.enPassant->file, chess::File::_D);
-  EXPECT_EQ(state.enPassant->rank, chess::Rank::_3);
+  EXPECT_EQ(state.enPassant.value(), chess::D3);
   EXPECT_EQ(state.turn, chess::Color::kBlack);
   EXPECT_EQ(state.whiteShortCastleAllowed, false);
   EXPECT_EQ(state.whiteLongCastleAllowed, false);

@@ -9,11 +9,11 @@ bool operator==(const Move& move1, const Move& move2) {
 std::string MoveToString(const Move& move) {
   auto result = std::string{};
 
-  result += static_cast<char>('a' + move.from.file);
-  result += static_cast<char>('1' + move.from.rank);
+  result += static_cast<char>('a' + GetFile(move.from));
+  result += static_cast<char>('1' + GetRank(move.from));
 
-  result += static_cast<char>('a' + move.to.file);
-  result += static_cast<char>('1' + move.to.rank);
+  result += static_cast<char>('a' + GetFile(move.to));
+  result += static_cast<char>('1' + GetRank(move.to));
 
   if (move.promotion.has_value()) {
     switch (*move.promotion) {
@@ -46,10 +46,8 @@ bool ParseMove(const std::string& string, Move& move) {
     return false;
   }
 
-  move.from.file = static_cast<File>(string[0] - 'a');
-  move.from.rank = static_cast<Rank>(string[1] - '1');
-  move.to.file = static_cast<File>(string[2] - 'a');
-  move.to.rank = static_cast<Rank>(string[3] - '1');
+  move.from = MakeSquare(static_cast<File>(string[0] - 'a'), static_cast<Rank>(string[1] - '1'));
+  move.to   = MakeSquare(static_cast<File>(string[2] - 'a'), static_cast<Rank>(string[3] - '1'));
 
   if (string.size() == 5) {
     switch (string[4]) {

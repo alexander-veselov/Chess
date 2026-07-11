@@ -31,10 +31,8 @@ static float_t EvaluatePiece(Piece piece) {
 
 static float_t EvaluateBoard(const Board& board) {
   auto value = 0.f;
-  for (const auto& row : board) {
-    for (const auto piece : row) {
-      value += EvaluatePiece(piece);
-    }
+  for (const auto& piece : board) {
+    value += EvaluatePiece(piece);
   }
   return value;
 }

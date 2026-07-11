@@ -145,10 +145,9 @@ static std::string CastlingRightsToString(const State& state) {
 }
 
 static Square IndexToSquare(size_t index) {
-  return Square{
-      static_cast<Rank>((kBoardSize * kBoardSize - index - 1) / kBoardSize),
+  return MakeSquare(
       static_cast<File>(kBoardSize - (kBoardSize * kBoardSize - index - 1) % kBoardSize - 1),
-  };
+      static_cast<Rank>((kBoardSize * kBoardSize - index - 1) / kBoardSize));
 }
 
 State StateFromFEN(const std::string& fen) {
@@ -168,7 +167,7 @@ State StateFromFEN(const std::string& fen) {
     }
     if (std::isalpha(character)) {
       const auto square = IndexToSquare(squareIndex++);
-      state.board[square.rank][square.file] = CharacterToPiece(character);
+      state.board[square] = CharacterToPiece(character);
     } else if (std::isdigit(character)) {
       squareIndex += CharacterToDigit(character);
     }
@@ -201,7 +200,7 @@ State StateFromFEN(const std::string& fen) {
   } else {
     const auto file = CharacterToFile(fen[characterIndex + 0]);
     const auto rank = CharacterToRank(fen[characterIndex + 1]);
-    state.enPassant = Square{rank, file};
+    state.enPassant = MakeSquare(file, rank);
     characterIndex += 3;
   }
 
@@ -225,7 +224,8 @@ std::string FENFromState(const State& state) {
   for (auto rank = int32_t{chess::Rank::_8}; rank >= int32_t{chess::Rank::_1}; --rank) {
     auto emptySquares = 0;
     for (auto file = int32_t{chess::File::_A}; file <= int32_t{chess::File::_H}; ++file) {
-      const auto piece = state.board[rank][file];
+      const auto square = MakeSquare(static_cast<File>(file), static_cast<Rank>(rank));
+      const auto piece = state.board[square];
       if (piece == Piece::kNone) {
         ++emptySquares;
       } else {
@@ -253,8 +253,8 @@ std::string FENFromState(const State& state) {
 
   fen += " ";
   if (state.enPassant.has_value()) {
-    fen += FileToCharacter(state.enPassant->file);
-    fen += RankToCharacter(state.enPassant->rank);
+    fen += FileToCharacter(GetFile(state.enPassant.value()));
+    fen += RankToCharacter(GetRank(state.enPassant.value()));
   } else {
     fen += "-";
   }

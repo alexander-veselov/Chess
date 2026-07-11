@@ -15,7 +15,6 @@ enum class Status { kWhiteToMove, kBlackToMove, kWhiteWon, kBlackWon, kDraw };
 State CreateDefaultState();
 bool IsValidSquare(int rank, int file);
 Square ShiftSquare(Square square, int rankShift, int fileShift);
-Piece Get(const Board& board, Square square);
 void MoveOrCapture(Board& board, const Move& move);
 void EnPassantCapture(Board& board, Square from, Square to);
 std::optional<Square> EvaluateEnPassant(const Board& board, Square from, Square to);
