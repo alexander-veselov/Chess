@@ -306,10 +306,11 @@ void GetMoves(const State& state, Square square, std::vector<Move>& moves) {
 
 bool IsInCheck(const State& state, Color turn) {
   const auto opponentColor = SwitchColor(turn);
+  auto moves = std::vector<Move>{};
   for (auto squareIndex = 0; squareIndex < kBoardSize * kBoardSize; ++squareIndex) {
     const auto square = static_cast<Square>(squareIndex);
     if (GetPieceColor(state.board[square]) == opponentColor) {
-      auto moves = std::vector<Move>{};
+      moves.clear();
       if (GetBasePiece(state.board[square]) == BasePiece::kKing) {
         GetKingMovesWithoutCastling(state, square, moves);
       } else {
