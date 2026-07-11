@@ -12,14 +12,12 @@ bool IsValidSquare(int rank, int file) {
 }
 
 Square ShiftSquare(Square square, int rankShift, int fileShift) {
-  const auto rank = GetRank(square);
-  const auto file = GetFile(square);
-  if (!IsValidSquare(rank + rankShift, file + fileShift)) {
+  const auto rank = GetRank(square) + rankShift;
+  const auto file = GetFile(square) + fileShift;
+  if (!IsValidSquare(rank, file)) {
     return square;
   }
-  const auto shiftedRank = static_cast<Rank>(static_cast<int>(rank) + rankShift);
-  const auto shiftedFile = static_cast<File>(static_cast<int>(file) + fileShift);
-  return MakeSquare(shiftedFile, shiftedRank);
+  return MakeSquare(static_cast<File>(file), static_cast<Rank>(rank));
 }
 
 void MoveOrCapture(Board& board, const Move& move) {
@@ -111,7 +109,11 @@ bool PushIfEmptyOrOpposite(std::vector<Move>& moves, const Board& board, Square 
 
 bool PushIfEmptyOrOpposite(std::vector<Move>& moves, const Board& board, Square square,
                            int rankShift, int fileShift) {
-  return PushIfEmptyOrOpposite(moves, board, square, ShiftSquare(square, rankShift, fileShift));
+  const auto shifted = ShiftSquare(square, rankShift, fileShift);
+  if (shifted == square) {
+    return false;
+  }
+  return PushIfEmptyOrOpposite(moves, board, square, shifted);
 }
 
 void GetKingMovesWithoutCastling(const State& state, Square square, std::vector<Move>& moves) {
@@ -305,22 +307,90 @@ void GetMoves(const State& state, Square square, std::vector<Move>& moves) {
 }
 
 bool IsInCheck(const State& state, Color turn) {
-  const auto opponentColor = SwitchColor(turn);
-  auto moves = std::vector<Move>{};
+  const auto king = MakePiece(turn, BasePiece::kKing);
   for (auto squareIndex = 0; squareIndex < kBoardSize * kBoardSize; ++squareIndex) {
     const auto square = static_cast<Square>(squareIndex);
-    if (GetPieceColor(state.board[square]) == opponentColor) {
-      moves.clear();
-      if (GetBasePiece(state.board[square]) == BasePiece::kKing) {
-        GetKingMovesWithoutCastling(state, square, moves);
-      } else {
-        GetMoves(state, square, moves);
-      }
-      for (const auto& move : moves) {
-        if (GetBasePiece(state.board[move.to]) == BasePiece::kKing) {
-          return true;
+    if (state.board[square] == king) {
+      const auto opponentColor = SwitchColor(turn);
+
+      const static auto bishopSigns =
+          std::vector<std::pair<int8_t, int8_t>>{{+1, +1}, {+1, -1}, {-1, -1}, {-1, +1}};
+      for (const auto sign : bishopSigns) {
+        for (auto i = 1; i < kBoardSize; ++i) {
+          const auto toSquare = ShiftSquare(square, sign.first * i, sign.second * i);
+          if (toSquare == square) {
+            break;
+          }
+          const auto piece = state.board[toSquare];
+          const auto pieceColor = GetPieceColor(piece);
+          const auto basePiece = GetBasePiece(piece);
+          if (pieceColor == opponentColor) {
+            if (basePiece == BasePiece::kBishop || basePiece == BasePiece::kQueen) {
+              return true;
+            }
+            if (i == 1 && basePiece == BasePiece::kKing) {
+              return true;
+            }
+          }
+          if (pieceColor != Color::kNone) {
+            break;
+          }
         }
       }
+
+      const static auto rookSigns =
+          std::vector<std::pair<int8_t, int8_t>>{{+1, 0}, {-1, 0}, {0, +1}, {0, -1}};
+      for (const auto sign : rookSigns) {
+        for (auto i = 1; i < kBoardSize; ++i) {
+          const auto toSquare = ShiftSquare(square, sign.first * i, sign.second * i);
+          if (toSquare == square) {
+            break;
+          }
+          const auto piece = state.board[toSquare];
+          const auto pieceColor = GetPieceColor(piece);
+          const auto basePiece = GetBasePiece(piece);
+          if (pieceColor == opponentColor) {
+            if (basePiece == BasePiece::kRook || basePiece == BasePiece::kQueen) {
+              return true;
+            }
+            if (i == 1 && basePiece == BasePiece::kKing) {
+              return true;
+            }
+          }
+          if (pieceColor != Color::kNone) {
+            break;
+          }
+        }
+      }
+
+      const static auto knightShifts = std::vector<std::pair<int8_t, int8_t>>{
+          {+1, +2}, {+1, -2}, {-1, +2}, {-1, -2}, {+2, +1}, {-2, +1}, {+2, -1}, {-2, -1}};
+      for (const auto shift : knightShifts) {
+        const auto toSquare = ShiftSquare(square, shift.first, shift.second);
+        const auto piece = state.board[toSquare];
+        const auto pieceColor = GetPieceColor(piece);
+        const auto basePiece = GetBasePiece(piece);
+        if (pieceColor == opponentColor) {
+          if (basePiece == BasePiece::kKnight) {
+            return true;
+          }
+        }
+      }
+
+      const auto direction = turn == Color::kWhite ? 1 : -1;
+      for (auto sign : {-1, +1}) {
+        const auto toSquare = ShiftSquare(square, direction, sign);
+        const auto piece = state.board[toSquare];
+        const auto pieceColor = GetPieceColor(piece);
+        const auto basePiece = GetBasePiece(piece);
+        if (pieceColor == opponentColor) {
+          if (basePiece == BasePiece::kPawn) {
+            return true;
+          }
+        }
+      }
+
+      break;
     }
   }
   return false;
