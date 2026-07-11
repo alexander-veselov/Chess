@@ -71,10 +71,11 @@ static float_t EvaluateState(const State& state, Status status, uint32_t depth, 
   auto score = 0.f;
   if (IsGameOver(status)) {
     score = GameOverScore(status);
+    score += ScorePenalty(score, depth, maxDepth);
   } else {
     score = EvaluateBoard(state.board);
   }
-  return score + ScorePenalty(score, depth, maxDepth);
+  return score;
 }
 
 static float_t DebugMinimax(const State& state, float_t alpha, float_t beta, uint32_t depth,
