@@ -8,8 +8,8 @@
 
 #include <random>
 
-static std::map<std::string, uint64_t>
-StorckfishDivide(const std::string& fen, const std::vector<chess::Move>& moves, uint32_t depth) {
+static std::map<std::string, U64>
+StorckfishDivide(const std::string& fen, const std::vector<chess::Move>& moves, U32 depth) {
   auto stockfish = chess::test::Stockfish("stockfish.exe");
   stockfish.Position(fen.data(), moves);
   return stockfish.Perft(depth);
@@ -21,9 +21,9 @@ static chess::Move MoveFromString(const std::string& string) {
   return move;
 }
 
-uint32_t GenerateRandomNumber(uint32_t min, uint32_t max) {
+U32 GenerateRandomNumber(U32 min, U32 max) {
   static auto rng = std::mt19937{std::random_device{}()};
-  auto dist = std::uniform_int_distribution<uint32_t>{min, max};
+  auto dist = std::uniform_int_distribution<U32>{min, max};
   return dist(rng);
 }
 
@@ -31,7 +31,7 @@ static chess::State GenerateRandomState() {
   auto state = chess::StateFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
   const auto moveCount = GenerateRandomNumber(0, 200);
   for (auto i = 0; i < moveCount; ++i) {
-    auto legalMoves = std::vector<chess::Move>{};
+    auto legalMoves = chess::Moves{};
     chess::GetAllLegalMoves(state, legalMoves);
     if (legalMoves.empty()) {
       return state;

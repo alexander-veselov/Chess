@@ -4,7 +4,6 @@
 #include "chess/core/square.h"
 
 #include <string>
-#include <optional>
 
 namespace chess {
 

@@ -5,6 +5,6 @@
 
 namespace chess {
 
-Move BestMove(const State& state, uint32_t depth=4);
+Move BestMove(const State& state, U32 depth=5);
 
 }

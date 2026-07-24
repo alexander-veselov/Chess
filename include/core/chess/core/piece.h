@@ -4,13 +4,13 @@
 
 namespace chess {
 
-enum class Color : uint8_t {
+enum class Color : U8 {
   kNone,
   kWhite,
   kBlack
 };
 
-enum class BasePiece : uint8_t {
+enum class BasePiece : U8 {
   kNone,
   kKing,
   kQueen,
@@ -20,11 +20,11 @@ enum class BasePiece : uint8_t {
   kPawn,
 };
 
-constexpr uint8_t MAKE_PIECE(Color color, BasePiece basePiece) {
-  return (static_cast<uint8_t>(basePiece) << 2) + static_cast<uint8_t>(color);
+constexpr U8 MAKE_PIECE(Color color, BasePiece basePiece) {
+  return (static_cast<U8>(basePiece) << 2) + static_cast<U8>(color);
 }
 
-enum class Piece : uint8_t {
+enum class Piece : U8 {
   kNone        = MAKE_PIECE(Color::kNone,  BasePiece::kNone),
   kWhiteKing   = MAKE_PIECE(Color::kWhite, BasePiece::kKing),
   kWhiteQueen  = MAKE_PIECE(Color::kWhite, BasePiece::kQueen),
@@ -45,11 +45,11 @@ constexpr Piece MakePiece(Color color, BasePiece basePiece) {
 }
 
 constexpr Color GetPieceColor(Piece piece) {
-  return static_cast<Color>(static_cast<uint8_t>(piece) & 0b11);
+  return static_cast<Color>(static_cast<U8>(piece) & 0b11);
 }
 
 constexpr BasePiece GetBasePiece(Piece piece) {
-  return static_cast<BasePiece>(static_cast<uint8_t>(piece) >> 2);
+  return static_cast<BasePiece>(static_cast<U8>(piece) >> 2);
 }
 
 constexpr Color SwitchColor(Color color) {

@@ -7,7 +7,7 @@
 
 namespace chess {
 
-uint64_t Perft(const State& state, int32_t depth);
-std::map<std::string, uint64_t> Divide(const State& state, int32_t depth);
+U64 Perft(const State& state, I32 depth);
+std::map<std::string, U64> Divide(const State& state, I32 depth);
 
 } // namespace chess

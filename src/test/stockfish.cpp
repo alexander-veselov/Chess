@@ -155,10 +155,10 @@ void Stockfish::Position(const std::string& fen, const std::vector<Move>& moves)
   Send(command);
 }
 
-std::map<std::string, uint64_t> Stockfish::Perft(uint32_t depth) {
+std::map<std::string, U64> Stockfish::Perft(U32 depth) {
   Send(std::string{"go perft "} + std::to_string(depth));
 
-  auto result = std::map<std::string, uint64_t>{};
+  auto result = std::map<std::string, U64>{};
   for (const auto& line : ReadUntil("Nodes searched:")) {
     if (line.rfind("info", 0) == 0) {
       continue;

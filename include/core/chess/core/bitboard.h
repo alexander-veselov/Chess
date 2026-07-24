@@ -7,27 +7,8 @@
 #include <bit>
 
 namespace chess {
-namespace bitboard {
 
 using Bitboard = U64;
-
-struct Board {
-  U64 whitePawns    = 0ULL;
-  U64 whiteKnights  = 0ULL;
-  U64 whiteBishops  = 0ULL;
-  U64 whiteRooks    = 0ULL;
-  U64 whiteQueens   = 0ULL;
-  U64 whiteKings    = 0ULL;
-  U64 blackPawns    = 0ULL;
-  U64 blackKnights  = 0ULL;
-  U64 blackBishops  = 0ULL;
-  U64 blackRooks    = 0ULL;
-  U64 blackQueens   = 0ULL;
-  U64 blackKings    = 0ULL;
-};
-
-chess::Board ToNaive(const Board& bitboard);
-Board FromNaive(const chess::Board& board);
 
 constexpr Square LSB(const Bitboard& bitboard) {
   return static_cast<Square>(std::countr_zero(bitboard));
@@ -192,5 +173,4 @@ constexpr Bitboard KingAttacks(Bitboard bitboard) {
          ((bitboard & NotHFile) << +NE);
 }
 
-} // namespace bitboard
 } // namespace chess

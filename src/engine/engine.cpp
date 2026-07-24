@@ -60,7 +60,7 @@ static float_t GameOverScore(Status status) {
   return 0.f;
 }
 
-static float_t ScorePenalty(float_t score, uint32_t depth, uint32_t maxDepth) {
+static float_t ScorePenalty(float_t score, U32 depth, U32 maxDepth) {
   if (score == 0.f) {
     return 0.f;
   }
@@ -68,7 +68,7 @@ static float_t ScorePenalty(float_t score, uint32_t depth, uint32_t maxDepth) {
   return score > 0.f ? -penalty : +penalty;
 }
 
-static float_t EvaluateState(const State& state, Status status, uint32_t depth, uint32_t maxDepth) {
+static float_t EvaluateState(const State& state, Status status, U32 depth, U32 maxDepth) {
   auto score = 0.f;
   if (IsGameOver(status)) {
     score = GameOverScore(status);
@@ -79,14 +79,14 @@ static float_t EvaluateState(const State& state, Status status, uint32_t depth, 
   return score;
 }
 
-static float_t Quiesce(const State& state, float_t alpha, float_t beta, uint32_t depth,
-                       uint32_t maxDepth) {
+static float_t Quiesce(const State& state, float_t alpha, float_t beta, U32 depth,
+                       U32 maxDepth) {
   const auto status = GetStatus(state);
   auto value = EvaluateState(state, status, depth, maxDepth);
   if (depth == 0 || IsGameOver(status)) {
     return value;
   }
-  auto moves = std::vector<Move>{};
+  auto moves = Moves{};
   GetAllLegalMoves(state, moves);
   if (state.turn == Color::kWhite) {
     for (const auto& move : moves) {
@@ -118,8 +118,8 @@ static float_t Quiesce(const State& state, float_t alpha, float_t beta, uint32_t
   return value;
 }
 
-static float_t Minimax(const State& state, float_t alpha, float_t beta, uint32_t depth,
-                       uint32_t maxDepth) {
+static float_t Minimax(const State& state, float_t alpha, float_t beta, U32 depth,
+                       U32 maxDepth) {
   const auto status = GetStatus(state);
   if (IsGameOver(status)) {
     return EvaluateState(state, status, depth, maxDepth);
@@ -128,7 +128,7 @@ static float_t Minimax(const State& state, float_t alpha, float_t beta, uint32_t
     return Quiesce(state, alpha, beta, maxDepth, maxDepth);
   }
   auto value = 0.f;
-  auto moves = std::vector<Move>{};
+  auto moves = Moves{};
   GetAllLegalMoves(state, moves);
   if (state.turn == Color::kWhite) {
     value = -kMaxScore;
@@ -156,10 +156,10 @@ static float_t Minimax(const State& state, float_t alpha, float_t beta, uint32_t
   return value;
 }
 
-Move BestMove(const State& state, uint32_t depth) {
+Move BestMove(const State& state, U32 depth) {
   auto bestValue = 0.f;
   auto bestMove = Move{};
-  auto moves = std::vector<Move>{};
+  auto moves = Moves{};
   auto alpha = -kMaxScore;
   auto beta = +kMaxScore;
   GetAllLegalMoves(state, moves);

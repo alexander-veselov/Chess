@@ -8,15 +8,15 @@
 
 namespace chess {
 
-uint64_t Perft(const State& state, int32_t depth) {
-  auto moves = std::vector<Move>{};
+U64 Perft(const State& state, I32 depth) {
+  auto moves = Moves{};
   GetAllLegalMoves(state, moves);
 
   if (depth == 1) {
     return moves.size();
   }
 
-  auto nodes = uint64_t{0};
+  auto nodes = U64{0};
   for (const auto& move : moves) {
     auto newState = State{state};
     MakeMove(newState, move);
@@ -26,10 +26,10 @@ uint64_t Perft(const State& state, int32_t depth) {
   return nodes;
 }
 
-std::map<std::string, uint64_t> Divide(const State& state, int32_t depth) {
-  auto result = std::map<std::string, uint64_t>{};
+std::map<std::string, U64> Divide(const State& state, I32 depth) {
+  auto result = std::map<std::string, U64>{};
 
-  auto moves = std::vector<Move>{};
+  auto moves = Moves{};
   GetAllLegalMoves(state, moves);
 
   if (depth == 1) {
@@ -37,7 +37,7 @@ std::map<std::string, uint64_t> Divide(const State& state, int32_t depth) {
       result[MoveToString(move)] = 1;
     }
   } else {
-    auto nodes = uint64_t{0};
+    auto nodes = U64{0};
     for (const auto& move : moves) {
       auto newState = State{state};
       MakeMove(newState, move);

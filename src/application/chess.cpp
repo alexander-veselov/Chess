@@ -46,10 +46,10 @@ Status GetStatus() {
   return status;
 }
 
-static std::vector<Move> legalMoves;
+static Moves legalMoves;
 static Square legalMovesSquare;
 static bool legalMovesNeedsRefresh = true;
-std::vector<Move> GetLegalMoves(Square square) {
+Moves GetLegalMoves(Square square) {
   if (legalMovesNeedsRefresh || !(square == legalMovesSquare)) {
     legalMoves = game.GetLegalMoves(square);
     legalMovesNeedsRefresh = false;

@@ -195,7 +195,7 @@ State StateFromFEN(const std::string& fen) {
   
   // Possible en passant targets
   if (fen[characterIndex] == '-') {
-    state.enPassant = std::nullopt;
+    state.enPassant = Square::kInvalid;
     characterIndex += 2;
   } else {
     const auto file = CharacterToFile(fen[characterIndex + 0]);
@@ -221,9 +221,9 @@ State StateFromFEN(const std::string& fen) {
 
 std::string FENFromState(const State& state) {
   auto fen = std::string{};
-  for (auto rank = int32_t{chess::Rank::_8}; rank >= int32_t{chess::Rank::_1}; --rank) {
+  for (auto rank = I32{chess::Rank::_8}; rank >= I32{chess::Rank::_1}; --rank) {
     auto emptySquares = 0;
-    for (auto file = int32_t{chess::File::_A}; file <= int32_t{chess::File::_H}; ++file) {
+    for (auto file = I32{chess::File::_A}; file <= I32{chess::File::_H}; ++file) {
       const auto square = CreateSquare(static_cast<File>(file), static_cast<Rank>(rank));
       const auto piece = state.board[square];
       if (piece == Piece::kNone) {
@@ -240,7 +240,7 @@ std::string FENFromState(const State& state) {
       fen += std::to_string(emptySquares);
       emptySquares = 0;
     }
-    if (rank != int32_t{chess::Rank::_1}) {
+    if (rank != I32{chess::Rank::_1}) {
       fen += '/';
     }
   }
@@ -252,9 +252,9 @@ std::string FENFromState(const State& state) {
   fen += CastlingRightsToString(state);
 
   fen += " ";
-  if (state.enPassant.has_value()) {
-    fen += FileToCharacter(GetFile(state.enPassant.value()));
-    fen += RankToCharacter(GetRank(state.enPassant.value()));
+  if (state.enPassant != Square::kInvalid) {
+    fen += FileToCharacter(GetFile(state.enPassant));
+    fen += RankToCharacter(GetRank(state.enPassant));
   } else {
     fen += "-";
   }

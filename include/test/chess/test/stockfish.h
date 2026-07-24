@@ -17,7 +17,7 @@ public:
   ~Stockfish();
 
   void Position(const std::string& fen, const std::vector<Move>& moves);
-  std::map<std::string, uint64_t> Perft(uint32_t depth);
+  std::map<std::string, U64> Perft(U32 depth);
   void Uci();
 
 private:

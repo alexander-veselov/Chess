@@ -7,10 +7,10 @@
 
 namespace chess {
 
-enum File : uint8_t { _A, _B, _C, _D, _E, _F, _G, _H };
-enum Rank : uint8_t { _1, _2, _3, _4, _5, _6, _7, _8 };
+enum File : U8 { _A, _B, _C, _D, _E, _F, _G, _H };
+enum Rank : U8 { _1, _2, _3, _4, _5, _6, _7, _8 };
 
-enum Square : uint8_t {
+enum Square : U8 {
   A1, B1, C1, D1, E1, F1, G1, H1,
   A2, B2, C2, D2, E2, F2, G2, H2,
   A3, B3, C3, D3, E3, F3, G3, H3,
@@ -20,7 +20,7 @@ enum Square : uint8_t {
   A7, B7, C7, D7, E7, F7, G7, H7,
   A8, B8, C8, D8, E8, F8, G8, H8,
 
-  COUNT, INVALID
+  kCount, kInvalid
 };
 
 constexpr Square CreateSquare(File file, Rank rank) {
