@@ -5,6 +5,7 @@
 #include "chess/core/piece.h"
 #include "chess/core/square.h"
 #include "chess/core/state.h"
+#include "chess/core/bitboard.h"
 
 #include <vector>
 
@@ -15,7 +16,6 @@ enum class Status { kWhiteToMove, kBlackToMove, kWhiteWon, kBlackWon, kDraw };
 State CreateDefaultState();
 bool IsValidSquare(int rank, int file);
 Square ShiftSquare(Square square, int rankShift, int fileShift);
-void MoveOrCapture(Board& board, const Move& move);
 void EnPassantCapture(Board& board, Square from, Square to);
 Square EvaluateEnPassant(const Board& board, Square from, Square to);
 void PushPawn(Moves& moves, Square fromSquare, Square toSquare, Color color);
@@ -27,7 +27,7 @@ bool PushIfEmptyOrOpposite(Moves& moves, const Board& board, Square fromSquare, 
 bool PushIfEmptyOrOpposite(Moves& moves, const Board& board, Square square, int rankShift,
                            int fileShift);
 void GetKingMovesWithoutCastling(const State& state, Square square, Moves& moves);
-bool IsAttacked(const State& state, Color turn, Square square);
+bool IsAttacked(const State& state, Color turn, Bitboard target);
 void GetKingMoves(const State& state, Square square, Moves& moves);
 void GetRookMoves(const State& state, Square square, Moves& moves);
 void GetBishopMoves(const State& state, Square square, Moves& moves);
@@ -38,7 +38,6 @@ void GetMoves(const State& state, Square square, Moves& moves);
 bool IsInCheck(const State& state, Color turn);
 bool CanMoveInTurn(const State& state, Square square);
 void UpdateCastlingState(State& state, const Move& move);
-void ProcessCastle(State& state, const Move& move);
 void MakeMove(State& state, const Move& move);
 void GetLegalMoves(const State& state, Square square, Moves& legalMoves);
 void GetAllLegalMoves(const State& state, Moves& legalMoves);

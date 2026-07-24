@@ -24,7 +24,7 @@ constexpr U8 MAKE_PIECE(Color color, BasePiece basePiece) {
   return (static_cast<U8>(basePiece) << 2) + static_cast<U8>(color);
 }
 
-enum class Piece : U8 {
+enum Piece : U8 {
   kNone        = MAKE_PIECE(Color::kNone,  BasePiece::kNone),
   kWhiteKing   = MAKE_PIECE(Color::kWhite, BasePiece::kKing),
   kWhiteQueen  = MAKE_PIECE(Color::kWhite, BasePiece::kQueen),
@@ -38,6 +38,7 @@ enum class Piece : U8 {
   kBlackBishop = MAKE_PIECE(Color::kBlack, BasePiece::kBishop),
   kBlackKnight = MAKE_PIECE(Color::kBlack, BasePiece::kKnight),
   kBlackPawn   = MAKE_PIECE(Color::kBlack, BasePiece::kPawn),
+  kPieceCount
 };
 
 constexpr Piece MakePiece(Color color, BasePiece basePiece) {

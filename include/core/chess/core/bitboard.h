@@ -28,6 +28,10 @@ constexpr U64 SetBit(U64 value, U8 position) {
   return value | (1ULL << position);
 }
 
+constexpr U64 InvertBit(U64 value, U8 position) {
+  return value ^ (1ULL << position);
+}
+
 static U64 SetBit(U64 value, U8 position, U8 bit) {
   if (bit == 0) {
     return ClearBit(value, position);

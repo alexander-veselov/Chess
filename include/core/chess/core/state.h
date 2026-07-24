@@ -4,6 +4,8 @@
 #include "chess/core/square.h"
 #include "chess/core/bitboard.h"
 
+#include <array>
+
 namespace chess {
 
 struct State {
@@ -17,18 +19,14 @@ struct State {
   U32 halfmoveClock;
   U32 fullmoveNumber;
 
-  Bitboard whitePawns = 0ULL;
-  Bitboard whiteKnights = 0ULL;
-  Bitboard whiteBishops = 0ULL;
-  Bitboard whiteRooks = 0ULL;
-  Bitboard whiteQueens = 0ULL;
-  Bitboard whiteKings = 0ULL;
-  Bitboard blackPawns = 0ULL;
-  Bitboard blackKnights = 0ULL;
-  Bitboard blackBishops = 0ULL;
-  Bitboard blackRooks = 0ULL;
-  Bitboard blackQueens = 0ULL;
-  Bitboard blackKings = 0ULL;
+  std::array<Bitboard, static_cast<size_t>(Piece::kPieceCount)> bitboards;
 };
+
+constexpr void FillBitboardsFromBoard(State& state) {
+  state.bitboards = {};
+  for (auto square = 0; square < Square::kSquareCount; ++square) {
+    state.bitboards[static_cast<size_t>(state.board[square])] |= (1ULL << square);
+  }
+}
 
 } // namespace chess

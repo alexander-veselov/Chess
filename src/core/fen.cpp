@@ -216,6 +216,8 @@ State StateFromFEN(const std::string& fen) {
   // Fullmove number
   state.fullmoveNumber = std::atoi(fen.data() + characterIndex);
 
+  FillBitboardsFromBoard(state);
+
   return state;
 }
 
