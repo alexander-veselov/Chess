@@ -5,29 +5,29 @@ namespace chess {
 static std::string PromotionToString(MoveType type) {
   switch (type) {
   case MoveType::kKnightPromotion:
-    return "N";
+    return "n";
   case MoveType::kBishopPromotion:
-    return "B";
+    return "b";
   case MoveType::kRookPromotion:
-    return "R";
+    return "r";
   case MoveType::kQueenPromotion:
-    return "Q";
+    return "q";
   }
   return "";
 }
 
 static bool ParsePromotion(char character, MoveType& type) {
   switch (character) {
-  case 'Q':
+  case 'q':
     type = MoveType::kQueenPromotion;
     break;
-  case 'R':
+  case 'r':
     type = MoveType::kRookPromotion;
     break;
-  case 'B':
+  case 'b':
     type = MoveType::kBishopPromotion;
     break;
-  case 'N':
+  case 'n':
     type = MoveType::kKnightPromotion;
     break;
   default:
