@@ -8,15 +8,47 @@
 
 namespace chess {
 
-struct Move {
-  Square from;
-  Square to;
-  std::optional<Piece> promotion;
+enum class MoveType : U8 {
+  kNormal,
+  kEnPassant,
+  kKingCastle,
+  kQueenCastle,
+  kQueenPromotion,
+  kRookPromotion,
+  kBishopPromotion,
+  kKnightPromotion,
 };
 
-bool operator==(const Move& move1, const Move& move2);
+using Move = U16; // [type, to, from]
 
-std::string MoveToString(const Move& move);
+constexpr Move CreateMove(Square from, Square to, MoveType type = MoveType::kNormal) {
+  return from | (to << 6) | (static_cast<Move>(type) << 12);
+}
+
+constexpr Square GetFrom(Move move) {
+  return static_cast<Square>(move & 0b111111);
+}
+
+constexpr Square GetTo(Move move) {
+  return static_cast<Square>((move >> 6) & 0b111111);
+}
+
+constexpr MoveType GetType(Move move) {
+  return static_cast<MoveType>((move >> 12) & 0b1111);
+}
+
+constexpr bool IsPromotion(MoveType type) {
+  switch (type) {
+  case MoveType::kKnightPromotion:
+  case MoveType::kBishopPromotion:
+  case MoveType::kRookPromotion:
+  case MoveType::kQueenPromotion:
+    return true;
+  }
+  return false;
+}
+
+std::string MoveToString(Move move);
 bool ParseMove(const std::string& string, Move& move);
 
 } // namespace chess

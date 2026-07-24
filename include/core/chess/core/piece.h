@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include "chess/core/types.h"
 
 namespace chess {
 

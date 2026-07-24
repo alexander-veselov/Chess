@@ -1,8 +1,9 @@
 #pragma once
 
 #include "chess/core/constants.h"
+#include "chess/core/types.h"
 
-#include <cstdint>
+#include <string>
 
 namespace chess {
 
@@ -22,7 +23,7 @@ enum Square : uint8_t {
   COUNT, INVALID
 };
 
-constexpr Square MakeSquare(File file, Rank rank) {
+constexpr Square CreateSquare(File file, Rank rank) {
   return static_cast<Square>(rank << 3 | file);
 }
 
@@ -33,6 +34,9 @@ constexpr File GetFile(Square square) {
 constexpr Rank GetRank(Square square) {
   return static_cast<Rank>(square >> 3);
 }
+
+std::string SquareToString(Square square);
+bool ParseSquare(const std::string& string, Square& square);
 
 
 } // namespace chess

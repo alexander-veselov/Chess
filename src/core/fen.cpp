@@ -145,7 +145,7 @@ static std::string CastlingRightsToString(const State& state) {
 }
 
 static Square IndexToSquare(size_t index) {
-  return MakeSquare(
+  return CreateSquare(
       static_cast<File>(kBoardSize - (kBoardSize * kBoardSize - index - 1) % kBoardSize - 1),
       static_cast<Rank>((kBoardSize * kBoardSize - index - 1) / kBoardSize));
 }
@@ -200,7 +200,7 @@ State StateFromFEN(const std::string& fen) {
   } else {
     const auto file = CharacterToFile(fen[characterIndex + 0]);
     const auto rank = CharacterToRank(fen[characterIndex + 1]);
-    state.enPassant = MakeSquare(file, rank);
+    state.enPassant = CreateSquare(file, rank);
     characterIndex += 3;
   }
 
@@ -224,7 +224,7 @@ std::string FENFromState(const State& state) {
   for (auto rank = int32_t{chess::Rank::_8}; rank >= int32_t{chess::Rank::_1}; --rank) {
     auto emptySquares = 0;
     for (auto file = int32_t{chess::File::_A}; file <= int32_t{chess::File::_H}; ++file) {
-      const auto square = MakeSquare(static_cast<File>(file), static_cast<Rank>(rank));
+      const auto square = CreateSquare(static_cast<File>(file), static_cast<Rank>(rank));
       const auto piece = state.board[square];
       if (piece == Piece::kNone) {
         ++emptySquares;

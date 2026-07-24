@@ -17,21 +17,36 @@ Square ShiftSquare(Square square, int rankShift, int fileShift) {
   if (!IsValidSquare(rank, file)) {
     return square;
   }
-  return MakeSquare(static_cast<File>(file), static_cast<Rank>(rank));
+  return CreateSquare(static_cast<File>(file), static_cast<Rank>(rank));
 }
 
-void MoveOrCapture(Board& board, const Move& move) {
-  if (move.promotion.has_value()) {
-    board[move.to] = move.promotion.value();
-  } else {
-    board[move.to] = board[move.from];
+static BasePiece PromotionTypeToBasePiece(MoveType type) {
+  switch (type) {
+  case MoveType::kKnightPromotion:
+    return BasePiece::kKnight;
+  case MoveType::kBishopPromotion:
+    return BasePiece::kBishop;
+  case MoveType::kRookPromotion:
+    return BasePiece::kRook;
+  case MoveType::kQueenPromotion:
+    return BasePiece::kQueen;
   }
-  board[move.from] = Piece::kNone;
+  return BasePiece::kNone;
+}
+
+static void MoveOrCapture(Board& board, const Move& move, Color color) {
+  const auto moveType = GetType(move);
+  if (IsPromotion(moveType)) {
+    board[GetTo(move)] = MakePiece(color, PromotionTypeToBasePiece(moveType));
+  } else {
+    board[GetTo(move)] = board[GetFrom(move)];
+  }
+  board[GetFrom(move)] = Piece::kNone;
 }
 
 void EnPassantCapture(Board& board, Square from, Square to) {
   if (GetBasePiece(board[to]) == BasePiece::kPawn) {
-    const auto captureSquare = MakeSquare(GetFile(to), GetRank(from));
+    const auto captureSquare = CreateSquare(GetFile(to), GetRank(from));
     board[captureSquare] = Piece::kNone;
   }
 }
@@ -50,12 +65,12 @@ std::optional<Square> EvaluateEnPassant(const Board& board, Square from, Square 
 void PushPawn(std::vector<Move>& moves, Square fromSquare, Square toSquare, Color color) {
   const auto toSquareRank = GetRank(toSquare);
   if (toSquareRank == Rank::_1 || toSquareRank == Rank::_8) {
-    moves.push_back(Move{fromSquare, toSquare, MakePiece(color, BasePiece::kBishop)});
-    moves.push_back(Move{fromSquare, toSquare, MakePiece(color, BasePiece::kRook)});
-    moves.push_back(Move{fromSquare, toSquare, MakePiece(color, BasePiece::kKnight)});
-    moves.push_back(Move{fromSquare, toSquare, MakePiece(color, BasePiece::kQueen)});
+    moves.push_back(CreateMove(fromSquare, toSquare, MoveType::kBishopPromotion));
+    moves.push_back(CreateMove(fromSquare, toSquare, MoveType::kRookPromotion));
+    moves.push_back(CreateMove(fromSquare, toSquare, MoveType::kKnightPromotion));
+    moves.push_back(CreateMove(fromSquare, toSquare, MoveType::kQueenPromotion));
   } else {
-    moves.push_back(Move{fromSquare, toSquare, std::nullopt});
+    moves.push_back(CreateMove(fromSquare, toSquare));
   }
 }
 
@@ -95,12 +110,12 @@ bool PushIfEmptyOrOpposite(std::vector<Move>& moves, const Board& board, Square 
   const auto toPiece = board[toSquare];
 
   if (toPiece == Piece::kNone) {
-    moves.push_back(Move{fromSquare, toSquare, std::nullopt});
+    moves.push_back(CreateMove(fromSquare, toSquare));
     return true;
   }
 
   if (GetPieceColor(fromPiece) != GetPieceColor(toPiece)) {
-    moves.push_back(Move{fromSquare, toSquare, std::nullopt});
+    moves.push_back(CreateMove(fromSquare, toSquare));
     return false;
   }
 
@@ -150,7 +165,7 @@ bool IsAttacked(const State& state, Color turn, Square square) {
         }
       }
       for (const auto& move : moves) {
-        if (move.to == square) {
+        if (GetTo(move) == square) {
           return true;
         }
       }
@@ -166,28 +181,28 @@ void GetKingMoves(const State& state, Square square, std::vector<Move>& moves) {
       if (state.whiteShortCastleAllowed) {
         if (state.board[F1] == Piece::kNone && state.board[G1] == Piece::kNone &&
             !IsAttacked(state, state.turn, F1)) {
-          moves.push_back(Move{square, G1, std::nullopt});
+          moves.push_back(CreateMove(square, G1));
         }
       }
       if (state.whiteLongCastleAllowed) {
         if (state.board[B1] == Piece::kNone && state.board[C1] == Piece::kNone &&
             state.board[D1] == Piece::kNone && !IsAttacked(state, state.turn, C1) &&
             !IsAttacked(state, state.turn, D1)) {
-          moves.push_back(Move{square, C1, std::nullopt});
+          moves.push_back(CreateMove(square, C1));
         }
       }
     } else {
       if (state.blackShortCastleAllowed) {
         if (state.board[F8] == Piece::kNone && state.board[G8] == Piece::kNone &&
             !IsAttacked(state, state.turn, F8)) {
-          moves.push_back(Move{square, G8, std::nullopt});
+          moves.push_back(CreateMove(square, G8));
         }
       }
       if (state.blackLongCastleAllowed) {
         if (state.board[B8] == Piece::kNone && state.board[C8] == Piece::kNone &&
             state.board[D8] == Piece::kNone && !IsAttacked(state, state.turn, C8) &&
             !IsAttacked(state, state.turn, D8)) {
-          moves.push_back(Move{square, C8, std::nullopt});
+          moves.push_back(CreateMove(square, C8));
         }
       }
     }
@@ -401,8 +416,8 @@ bool CanMoveInTurn(const State& state, Square square) {
 }
 
 void UpdateCastlingState(State& state, const Move& move) {
-  const auto fromPiece = state.board[move.from];
-  const auto toPiece = state.board[move.to];
+  const auto fromPiece = state.board[GetFrom(move)];
+  const auto toPiece = state.board[GetTo(move)];
   const auto fromBasePiece = GetBasePiece(fromPiece);
   const auto toBasePiece = GetBasePiece(toPiece);
   if (fromBasePiece == BasePiece::kKing) {
@@ -414,62 +429,62 @@ void UpdateCastlingState(State& state, const Move& move) {
       state.blackLongCastleAllowed = false;
     }
   } else if (fromBasePiece == BasePiece::kRook) {
-    if (move.from == A1) {
+    if (GetFrom(move) == A1) {
       state.whiteLongCastleAllowed = false;
-    } else if (move.from == H1) {
+    } else if (GetFrom(move) == H1) {
       state.whiteShortCastleAllowed = false;
     }
-    if (move.from == A8) {
+    if (GetFrom(move) == A8) {
       state.blackLongCastleAllowed = false;
     }
-    if (move.from == H8) {
+    if (GetFrom(move) == H8) {
       state.blackShortCastleAllowed = false;
     }
   } else if (toBasePiece == BasePiece::kRook) {
-    if (move.to == A1) {
+    if (GetTo(move) == A1) {
       state.whiteLongCastleAllowed = false;
-    } else if (move.to == H1) {
+    } else if (GetTo(move) == H1) {
       state.whiteShortCastleAllowed = false;
     }
-    if (move.to == A8) {
+    if (GetTo(move) == A8) {
       state.blackLongCastleAllowed = false;
     }
-    if (move.to == H8) {
+    if (GetTo(move) == H8) {
       state.blackShortCastleAllowed = false;
     }
   }
 }
 
 void ProcessCastle(State& state, const Move& move) {
-  const auto piece = state.board[move.to];
+  const auto piece = state.board[GetTo(move)];
   const auto basePiece = GetBasePiece(piece);
   if (basePiece != BasePiece::kKing) {
     return;
   }
-  const auto fileShift = GetFile(move.from) - GetFile(move.to);
+  const auto fileShift = GetFile(GetFrom(move)) - GetFile(GetTo(move));
   if (std::abs(fileShift) != 2) {
     return;
   }
-  if (move.to == G1) {
+  if (GetTo(move) == G1) {
     std::swap(state.board[H1], state.board[F1]);
-  } else if (move.to == C1) {
+  } else if (GetTo(move) == C1) {
     std::swap(state.board[A1], state.board[D1]);
-  } else if (move.to == G8) {
+  } else if (GetTo(move) == G8) {
     std::swap(state.board[H8], state.board[F8]);
-  } else if (move.to == C8) {
+  } else if (GetTo(move) == C8) {
     std::swap(state.board[A8], state.board[D8]);
   }
 }
 
 void MakeMove(State& state, const Move& move) {
   UpdateCastlingState(state, move);
-  MoveOrCapture(state.board, move);
-  if (state.enPassant.has_value() && move.to == state.enPassant) {
-    EnPassantCapture(state.board, move.from, move.to);
+  MoveOrCapture(state.board, move, state.turn);
+  if (state.enPassant.has_value() && GetTo(move) == state.enPassant) {
+    EnPassantCapture(state.board, GetFrom(move), GetTo(move));
   }
   ProcessCastle(state, move);
   state.turn = SwitchColor(state.turn);
-  state.enPassant = EvaluateEnPassant(state.board, move.from, move.to);
+  state.enPassant = EvaluateEnPassant(state.board, GetFrom(move), GetTo(move));
 }
 
 void GetLegalMoves(const State& state, Square square, std::vector<Move>& legalMoves) {
@@ -532,12 +547,12 @@ Status GetStatus(const State& state) {
 }
 
 bool LegalMove(State& state, const Move& move) {
-  if (move.from == move.to || !CanMoveInTurn(state, move.from)) {
+  if (GetFrom(move) == GetTo(move) || !CanMoveInTurn(state, GetFrom(move))) {
     return false;
   }
   auto& board = state.board;
   auto legalMoves = std::vector<Move>{};
-  GetLegalMoves(state, move.from, legalMoves);
+  GetLegalMoves(state, GetFrom(move), legalMoves);
   for (const auto legalMove : legalMoves) {
     if (legalMove == move) {
       MakeMove(state, legalMove);

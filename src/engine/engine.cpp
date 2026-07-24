@@ -90,7 +90,7 @@ static float_t Quiesce(const State& state, float_t alpha, float_t beta, uint32_t
   GetAllLegalMoves(state, moves);
   if (state.turn == Color::kWhite) {
     for (const auto& move : moves) {
-      if (state.board[move.to] == Piece::kNone) {
+      if (state.board[GetTo(move)] == Piece::kNone) {
         continue;
       }
       auto childState = State{state};
@@ -103,7 +103,7 @@ static float_t Quiesce(const State& state, float_t alpha, float_t beta, uint32_t
     }
   } else {
     for (const auto& move : moves) {
-      if (state.board[move.to] == Piece::kNone) {
+      if (state.board[GetTo(move)] == Piece::kNone) {
         continue;
       }
       auto childState = State{state};

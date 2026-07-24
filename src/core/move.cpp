@@ -2,41 +2,46 @@
 
 namespace chess {
 
-bool operator==(const Move& move1, const Move& move2) {
-  return move1.from == move2.from && move1.to == move2.to && move1.promotion == move2.promotion;
+static std::string PromotionToString(MoveType type) {
+  switch (type) {
+  case MoveType::kKnightPromotion:
+    return "N";
+  case MoveType::kBishopPromotion:
+    return "B";
+  case MoveType::kRookPromotion:
+    return "R";
+  case MoveType::kQueenPromotion:
+    return "Q";
+  }
+  return "";
 }
 
-std::string MoveToString(const Move& move) {
+static bool ParsePromotion(char character, MoveType& type) {
+  switch (character) {
+  case 'Q':
+    type = MoveType::kQueenPromotion;
+    break;
+  case 'R':
+    type = MoveType::kRookPromotion;
+    break;
+  case 'B':
+    type = MoveType::kBishopPromotion;
+    break;
+  case 'N':
+    type = MoveType::kKnightPromotion;
+    break;
+  default:
+    return false;
+  }
+  return true;
+}
+
+std::string MoveToString(Move move) {
   auto result = std::string{};
 
-  result += static_cast<char>('a' + GetFile(move.from));
-  result += static_cast<char>('1' + GetRank(move.from));
-
-  result += static_cast<char>('a' + GetFile(move.to));
-  result += static_cast<char>('1' + GetRank(move.to));
-
-  if (move.promotion.has_value()) {
-    switch (*move.promotion) {
-    case Piece::kWhiteKnight:
-    case Piece::kBlackKnight:
-      result += 'n';
-      break;
-    case Piece::kWhiteBishop:
-    case Piece::kBlackBishop:
-      result += 'b';
-      break;
-    case Piece::kWhiteRook:
-    case Piece::kBlackRook:
-      result += 'r';
-      break;
-    case Piece::kWhiteQueen:
-    case Piece::kBlackQueen:
-      result += 'q';
-      break;
-    default:
-      break;
-    }
-  }
+  result += SquareToString(GetFrom(move));
+  result += SquareToString(GetTo(move));
+  result += PromotionToString(GetType(move));
 
   return result;
 }
@@ -46,27 +51,21 @@ bool ParseMove(const std::string& string, Move& move) {
     return false;
   }
 
-  move.from = MakeSquare(static_cast<File>(string[0] - 'a'), static_cast<Rank>(string[1] - '1'));
-  move.to   = MakeSquare(static_cast<File>(string[2] - 'a'), static_cast<Rank>(string[3] - '1'));
-
-  if (string.size() == 5) {
-    switch (string[4]) {
-    case 'q':
-      move.promotion = Piece::kWhiteQueen;
-      break;
-    case 'r':
-      move.promotion = Piece::kWhiteRook;
-      break;
-    case 'b':
-      move.promotion = Piece::kWhiteBishop;
-      break;
-    case 'n':
-      move.promotion = Piece::kWhiteKnight;
-      break;
-    default:
-      return false;
-    }
+  auto from = Square{};
+  if (!ParseSquare(string.substr(0, 2), from)) {
+    return false;
   }
+  auto to = Square{};
+  if (!ParseSquare(string.substr(2, 2), to)) {
+    return false;
+  }
+
+  auto type = MoveType::kNormal;
+  if (string.size() == 5 && !ParsePromotion(string[4], type)) {
+    return false;
+  }
+
+  move = CreateMove(from, to, type);
 
   return true;
 }
