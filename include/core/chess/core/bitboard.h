@@ -143,23 +143,50 @@ static Bitboard SlidingAttacks(Square square, Bitboard occupancy, Direction dire
   return attacks;
 }
 
-static Bitboard BishopAttacks(Square square, Bitboard occupancy) {
+static Bitboard SingleBishopAttacks(Square square, Bitboard occupancy) {
   return SlidingAttacks(square, occupancy, NW) |
          SlidingAttacks(square, occupancy, NE) |
          SlidingAttacks(square, occupancy, SE) |
          SlidingAttacks(square, occupancy, SW);
 }
 
-static Bitboard RookAttacks(Square square, Bitboard occupancy) {
+static Bitboard SingleRookAttacks(Square square, Bitboard occupancy) {
   return SlidingAttacks(square, occupancy, N) |
          SlidingAttacks(square, occupancy, E) |
          SlidingAttacks(square, occupancy, S) |
          SlidingAttacks(square, occupancy, W);
 }
 
-static Bitboard QueenAttacks(Square square, Bitboard occupancy) {
-  return BishopAttacks(square, occupancy) |
-         RookAttacks(square, occupancy);
+static Bitboard SingleQueenAttacks(Square square, Bitboard occupancy) {
+  return SingleBishopAttacks(square, occupancy) |
+         SingleRookAttacks(square, occupancy);
+}
+
+static Bitboard BishopAttacks(Bitboard bitboard, Bitboard occupancy) {
+  auto attacks = Bitboard{0ULL};
+  while (bitboard) {
+    const auto from = PopLSB(bitboard);
+    attacks |= SingleBishopAttacks(from, occupancy);
+  }
+  return attacks;
+}
+
+static Bitboard RookAttacks(Bitboard bitboard, Bitboard occupancy) {
+  auto attacks = Bitboard{0ULL};
+  while (bitboard) {
+    const auto from = PopLSB(bitboard);
+    attacks |= SingleRookAttacks(from, occupancy);
+  }
+  return attacks;
+}
+
+static Bitboard QueenAttacks(Bitboard bitboard, Bitboard occupancy) {
+  auto attacks = Bitboard{0ULL};
+  while (bitboard) {
+    const auto from = PopLSB(bitboard);
+    attacks |= SingleQueenAttacks(from, occupancy);
+  }
+  return attacks;
 }
 
 constexpr Bitboard KingAttacks(Bitboard bitboard) {

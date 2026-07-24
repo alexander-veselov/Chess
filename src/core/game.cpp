@@ -3,8 +3,59 @@
 
 namespace chess {
 
+static Bitboard& AccessBitboard(State& state, Piece piece) {
+  switch (piece) {
+  case Piece::kWhiteKing:
+    return state.whiteKings;
+  case Piece::kWhiteQueen:
+    return state.whiteQueens;
+  case Piece::kWhiteRook:
+    return state.whiteRooks;
+  case Piece::kWhiteBishop:
+    return state.whiteBishops;
+  case Piece::kWhiteKnight:
+    return state.whiteKnights;
+  case Piece::kWhitePawn:
+    return state.whitePawns;
+  case Piece::kBlackKing:
+    return state.blackKings;
+  case Piece::kBlackQueen:
+    return state.blackQueens;
+  case Piece::kBlackRook:
+    return state.blackRooks;
+  case Piece::kBlackBishop:
+    return state.blackBishops;
+  case Piece::kBlackKnight:
+    return state.blackKnights;
+  case Piece::kBlackPawn:
+    return state.blackPawns;
+  }
+  static auto dummy = Bitboard{0};
+  return dummy;
+}
+
+static void FillBitboardsFromBoard(State& state) {
+  state.whitePawns = 0ULL;
+  state.whiteKnights = 0ULL;
+  state.whiteBishops = 0ULL;
+  state.whiteRooks = 0ULL;
+  state.whiteQueens = 0ULL;
+  state.whiteKings = 0ULL;
+  state.blackPawns = 0ULL;
+  state.blackKnights = 0ULL;
+  state.blackBishops = 0ULL;
+  state.blackRooks = 0ULL;
+  state.blackQueens = 0ULL;
+  state.blackKings = 0ULL;
+  for (auto square = 0; square < Square::kCount; ++square) {
+    AccessBitboard(state, state.board[square]) |= (1ULL << square);
+  }
+}
+
 State CreateDefaultState() {
-  return chess::StateFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+  auto state = chess::StateFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+  FillBitboardsFromBoard(state);
+  return state;
 }
 
 bool IsValidSquare(int rank, int file) {
@@ -322,92 +373,40 @@ void GetMoves(const State& state, Square square, Moves& moves) {
 }
 
 bool IsInCheck(const State& state, Color turn) {
-  const auto king = MakePiece(turn, BasePiece::kKing);
-  for (auto squareIndex = 0; squareIndex < kBoardSize * kBoardSize; ++squareIndex) {
-    const auto square = static_cast<Square>(squareIndex);
-    if (state.board[square] == king) {
-      const auto opponentColor = SwitchColor(turn);
+  auto occupancy = Bitboard{0ULL};
+  occupancy |= state.whitePawns;
+  occupancy |= state.whiteKnights;
+  occupancy |= state.whiteBishops;
+  occupancy |= state.whiteRooks;
+  occupancy |= state.whiteQueens;
+  occupancy |= state.whiteKings;
+  occupancy |= state.blackPawns;
+  occupancy |= state.blackKnights;
+  occupancy |= state.blackBishops;
+  occupancy |= state.blackRooks;
+  occupancy |= state.blackQueens;
+  occupancy |= state.blackKings;
 
-      const static auto bishopSigns =
-          std::vector<std::pair<I8, I8>>{{+1, +1}, {+1, -1}, {-1, -1}, {-1, +1}};
-      for (const auto sign : bishopSigns) {
-        for (auto i = 1; i < kBoardSize; ++i) {
-          const auto toSquare = ShiftSquare(square, sign.first * i, sign.second * i);
-          if (toSquare == square) {
-            break;
-          }
-          const auto piece = state.board[toSquare];
-          const auto pieceColor = GetPieceColor(piece);
-          const auto basePiece = GetBasePiece(piece);
-          if (pieceColor == opponentColor) {
-            if (basePiece == BasePiece::kBishop || basePiece == BasePiece::kQueen) {
-              return true;
-            }
-            if (i == 1 && basePiece == BasePiece::kKing) {
-              return true;
-            }
-          }
-          if (pieceColor != Color::kNone) {
-            break;
-          }
-        }
-      }
-
-      const static auto rookSigns =
-          std::vector<std::pair<I8, I8>>{{+1, 0}, {-1, 0}, {0, +1}, {0, -1}};
-      for (const auto sign : rookSigns) {
-        for (auto i = 1; i < kBoardSize; ++i) {
-          const auto toSquare = ShiftSquare(square, sign.first * i, sign.second * i);
-          if (toSquare == square) {
-            break;
-          }
-          const auto piece = state.board[toSquare];
-          const auto pieceColor = GetPieceColor(piece);
-          const auto basePiece = GetBasePiece(piece);
-          if (pieceColor == opponentColor) {
-            if (basePiece == BasePiece::kRook || basePiece == BasePiece::kQueen) {
-              return true;
-            }
-            if (i == 1 && basePiece == BasePiece::kKing) {
-              return true;
-            }
-          }
-          if (pieceColor != Color::kNone) {
-            break;
-          }
-        }
-      }
-
-      const static auto knightShifts = std::vector<std::pair<I8, I8>>{
-          {+1, +2}, {+1, -2}, {-1, +2}, {-1, -2}, {+2, +1}, {-2, +1}, {+2, -1}, {-2, -1}};
-      for (const auto shift : knightShifts) {
-        const auto toSquare = ShiftSquare(square, shift.first, shift.second);
-        const auto piece = state.board[toSquare];
-        const auto pieceColor = GetPieceColor(piece);
-        const auto basePiece = GetBasePiece(piece);
-        if (pieceColor == opponentColor) {
-          if (basePiece == BasePiece::kKnight) {
-            return true;
-          }
-        }
-      }
-
-      const auto direction = turn == Color::kWhite ? 1 : -1;
-      for (auto sign : {-1, +1}) {
-        const auto toSquare = ShiftSquare(square, direction, sign);
-        const auto piece = state.board[toSquare];
-        const auto pieceColor = GetPieceColor(piece);
-        const auto basePiece = GetBasePiece(piece);
-        if (pieceColor == opponentColor) {
-          if (basePiece == BasePiece::kPawn) {
-            return true;
-          }
-        }
-      }
-
-      break;
-    }
+  if (turn == Color::kWhite) {
+    auto attacks = Bitboard{0ULL};
+    attacks |= BlackPawnAttacks(state.blackPawns);
+    attacks |= KnightAttacks(state.blackKnights);
+    attacks |= KingAttacks(state.blackKings);
+    attacks |= QueenAttacks(state.blackQueens, occupancy);
+    attacks |= RookAttacks(state.blackRooks, occupancy);
+    attacks |= BishopAttacks(state.blackBishops, occupancy);
+    return (state.whiteKings & attacks) != 0ULL;
+  } else if (turn == Color::kBlack) {
+    auto attacks = Bitboard{0ULL};
+    attacks |= WhitePawnAttacks(state.whitePawns);
+    attacks |= KnightAttacks(state.whiteKnights);
+    attacks |= KingAttacks(state.whiteKings);
+    attacks |= QueenAttacks(state.whiteQueens, occupancy);
+    attacks |= RookAttacks(state.whiteRooks, occupancy);
+    attacks |= BishopAttacks(state.whiteBishops, occupancy);
+    return (state.blackKings & attacks) != 0ULL;
   }
+
   return false;
 }
 
@@ -485,6 +484,7 @@ void MakeMove(State& state, const Move& move) {
   ProcessCastle(state, move);
   state.turn = SwitchColor(state.turn);
   state.enPassant = EvaluateEnPassant(state.board, GetFrom(move), GetTo(move));
+  FillBitboardsFromBoard(state);
 }
 
 void GetLegalMoves(const State& state, Square square, Moves& legalMoves) {
