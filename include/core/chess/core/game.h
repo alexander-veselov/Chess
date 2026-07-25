@@ -18,23 +18,8 @@ bool IsValidSquare(int rank, int file);
 Square ShiftSquare(Square square, int rankShift, int fileShift);
 void EnPassantCapture(Board& board, Square from, Square to);
 Square EvaluateEnPassant(const Board& board, Square from, Square to);
-void PushPawn(Moves& moves, Square fromSquare, Square toSquare, Color color);
-bool PushPawnIfEmpty(Moves& moves, const Board& board, Square fromSquare, int rankShift,
-                     int fileShift);
-void PushPawnIfOpposite(Moves& moves, const Board& board, Square fromSquare, int rankShift,
-                        int fileShift);
-bool PushIfEmptyOrOpposite(Moves& moves, const Board& board, Square fromSquare, Square toSquare);
-bool PushIfEmptyOrOpposite(Moves& moves, const Board& board, Square square, int rankShift,
-                           int fileShift);
 void GetKingMovesWithoutCastling(const State& state, Square square, Moves& moves);
 bool IsAttacked(const State& state, Color turn, Bitboard target);
-void GetKingMoves(const State& state, Square square, Moves& moves);
-void GetRookMoves(const State& state, Square square, Moves& moves);
-void GetBishopMoves(const State& state, Square square, Moves& moves);
-void GetQueenMoves(const State& state, Square square, Moves& moves);
-void GetKnightMoves(const State& state, Square square, Moves& moves);
-void GetPawnMoves(const State& state, Square square, Moves& moves);
-void GetMoves(const State& state, Square square, Moves& moves);
 bool IsInCheck(const State& state, Color turn);
 bool CanMoveInTurn(const State& state, Square square);
 void UpdateCastlingState(State& state, const Move& move);

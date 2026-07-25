@@ -55,7 +55,7 @@ Square EvaluateEnPassant(const Board& board, Square from, Square to) {
   if (piece == Piece::kBlackPawn || piece == Piece::kWhitePawn) {
     const auto rankShift = GetRank(to) - GetRank(from);
     if (std::abs(rankShift) == 2) {
-      return ShiftSquare(from, rankShift / 2, 0);
+      return CreateSquare(GetFile(from), (Rank)(GetRank(from) + rankShift / 2));
     }
   }
   return Square::kInvalid;
@@ -81,85 +81,12 @@ static Bitboard AllyPieces(const State& state) {
   return allyPieces;
 }
 
-void PushPawn(Moves& moves, Square fromSquare, Square toSquare, Color color) {
-  const auto toSquareRank = GetRank(toSquare);
-  if (toSquareRank == Rank::_1 || toSquareRank == Rank::_8) {
-    moves.push_back(CreateMove(fromSquare, toSquare, MoveType::kBishopPromotion));
-    moves.push_back(CreateMove(fromSquare, toSquare, MoveType::kRookPromotion));
-    moves.push_back(CreateMove(fromSquare, toSquare, MoveType::kKnightPromotion));
-    moves.push_back(CreateMove(fromSquare, toSquare, MoveType::kQueenPromotion));
-  } else {
-    moves.push_back(CreateMove(fromSquare, toSquare));
-  }
-}
-
-bool PushPawnIfEmpty(Moves& moves, const Board& board, Square fromSquare, int rankShift,
-                     int fileShift) {
-  const auto toSquare = ShiftSquare(fromSquare, rankShift, fileShift);
-  const auto fromPiece = board[fromSquare];
-  const auto toPiece = board[toSquare];
-
-  if (toPiece == Piece::kNone) {
-    PushPawn(moves, fromSquare, toSquare, GetPieceColor(fromPiece));
-    return true;
-  }
-
-  return false;
-}
-
-void PushPawnIfOpposite(Moves& moves, const Board& board, Square fromSquare,
-                        int rankShift, int fileShift) {
-  const auto toSquare = ShiftSquare(fromSquare, rankShift, fileShift);
-  const auto fromPiece = board[fromSquare];
-  const auto toPiece = board[toSquare];
-  const auto fromPieceColor = GetPieceColor(fromPiece);
-
-  if (toPiece == Piece::kNone) {
-    return;
-  }
-
-  if (GetPieceColor(fromPiece) != GetPieceColor(toPiece)) {
-    PushPawn(moves, fromSquare, toSquare, GetPieceColor(fromPiece));
-  }
-}
-
-bool PushIfEmptyOrOpposite(Moves& moves, const Board& board, Square fromSquare,
-                           Square toSquare) {
-  const auto fromPiece = board[fromSquare];
-  const auto toPiece = board[toSquare];
-
-  if (toPiece == Piece::kNone) {
-    moves.push_back(CreateMove(fromSquare, toSquare));
-    return true;
-  }
-
-  if (GetPieceColor(fromPiece) != GetPieceColor(toPiece)) {
-    moves.push_back(CreateMove(fromSquare, toSquare));
-    return false;
-  }
-
-  return false;
-}
-
-bool PushIfEmptyOrOpposite(Moves& moves, const Board& board, Square square,
-                           int rankShift, int fileShift) {
-  const auto shifted = ShiftSquare(square, rankShift, fileShift);
-  if (shifted == square) {
-    return false;
-  }
-  return PushIfEmptyOrOpposite(moves, board, square, shifted);
-}
-
 void GetKingMovesWithoutCastling(const State& state, Square square, Moves& moves) {
   const auto allyPieces = AllyPieces(state);
-  auto bitboard = Bitboard{1ULL << square};
-  while (bitboard) {
-    const auto from = PopLSB(bitboard);
-    auto attacks = KingAttacks(1ULL << from) & ~allyPieces;
-    while (attacks) {
-      const auto to = PopLSB(attacks);
-      moves.push_back(CreateMove(from, to));
-    }
+  auto attacks = KingAttacks(1ULL << square) & ~allyPieces;
+  while (attacks) {
+    const auto to = PopLSB(attacks);
+    moves.push_back(CreateMove(square, to));
   }
 }
 
@@ -214,7 +141,7 @@ bool IsAttacked(const State& state, Color turn, Bitboard target) {
   return false;
 }
 
-void GetKingMoves(const State& state, Square square, Moves& moves) {
+static void GetKingMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
   GetKingMovesWithoutCastling(state, square, moves);
   if (!IsInCheck(state, state.turn)) {
     if (GetPieceColor(state.board[square]) == Color::kWhite) {
@@ -249,96 +176,98 @@ void GetKingMoves(const State& state, Square square, Moves& moves) {
   }
 }
 
-void GetRookMoves(const State& state, Square square, Moves& moves) {
-  const auto allyPieces = AllyPieces(state);
-  auto bitboard = Bitboard{1ULL << square};
-  while (bitboard) {
-    const auto from = PopLSB(bitboard);
-    auto attacks = RookAttacks(1ULL << from, ~state.bitboards[kNone]) & ~allyPieces;
-    while (attacks) {
-      const auto to = PopLSB(attacks);
-      moves.push_back(CreateMove(from, to));
-    }
+static void GetRookMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
+  auto attacks = RookAttacks(1ULL << square, ~state.bitboards[kNone]) & ~allyPieces;
+  while (attacks) {
+    const auto to = PopLSB(attacks);
+    moves.push_back(CreateMove(square, to));
   }
 }
 
-void GetBishopMoves(const State& state, Square square, Moves& moves) {
-  const auto allyPieces = AllyPieces(state);
-  auto bitboard = Bitboard{1ULL << square};
-  while (bitboard) {
-    const auto from = PopLSB(bitboard);
-    auto attacks = BishopAttacks(1ULL << from, ~state.bitboards[kNone]) & ~allyPieces;
-    while (attacks) {
-      const auto to = PopLSB(attacks);
-      moves.push_back(CreateMove(from, to));
-    }
+static void GetBishopMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
+  auto attacks = BishopAttacks(1ULL << square, ~state.bitboards[kNone]) & ~allyPieces;
+  while (attacks) {
+    const auto to = PopLSB(attacks);
+    moves.push_back(CreateMove(square, to));
   }
 }
 
-void GetQueenMoves(const State& state, Square square, Moves& moves) {
-  GetBishopMoves(state, square, moves);
-  GetRookMoves(state, square, moves);
-}
-
-void GetKnightMoves(const State& state, Square square, Moves& moves) {
-  const auto allyPieces = AllyPieces(state);
-  auto bitboard = Bitboard{1ULL << square};
-  while (bitboard) {
-    const auto from = PopLSB(bitboard);
-    auto attacks = KnightAttacks(1ULL << from) & ~allyPieces;
-    while (attacks) {
-      const auto to = PopLSB(attacks);
-      moves.push_back(CreateMove(from, to));
-    }
+static void GetQueenMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
+  auto attacks = QueenAttacks(1ULL << square, ~state.bitboards[kNone]) & ~allyPieces;
+  while (attacks) {
+    const auto to = PopLSB(attacks);
+    moves.push_back(CreateMove(square, to));
   }
 }
 
-void GetPawnMoves(const State& state, Square square, Moves& moves) {
-  const auto color = GetPieceColor(state.board[square]);
-  const auto direction = color == Color::kWhite ? 1 : -1;
-  const auto defaultRank = color == Color::kWhite ? Rank::_2 : Rank::_7;
-  if (PushPawnIfEmpty(moves, state.board, square, direction, 0)) {
-    if (GetRank(square) == defaultRank) {
-      PushPawnIfEmpty(moves, state.board, square, direction * 2, 0);
+static void GetKnightMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
+  auto attacks = KnightAttacks(1ULL << square) & ~allyPieces;
+  while (attacks) {
+    const auto to = PopLSB(attacks);
+    moves.push_back(CreateMove(square, to));
+  }
+}
+
+static void GetPawnMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
+  const auto bitboard = 1ULL << square;
+  auto attacks = Bitboard{0ULL};
+  if (state.turn == Color::kWhite) {
+    attacks |= WhitePawnSinglePushes(bitboard, ~state.bitboards[kNone]);
+    attacks |= WhitePawnDoublePushes(bitboard, ~state.bitboards[kNone]);
+    attacks |= WhitePawnAttacks(bitboard) & ~(allyPieces | state.bitboards[kNone]);
+  } else {
+    attacks |= BlackPawnSinglePushes(bitboard, ~state.bitboards[kNone]);
+    attacks |= BlackPawnDoublePushes(bitboard, ~state.bitboards[kNone]);
+    attacks |= BlackPawnAttacks(bitboard) & ~(allyPieces | state.bitboards[kNone]);
+  }
+  while (attacks) {
+    const auto toSquare = PopLSB(attacks);
+    const auto toSquareRank = GetRank(toSquare);
+    if (toSquareRank == Rank::_1 || toSquareRank == Rank::_8) {
+      moves.push_back(CreateMove(square, toSquare, MoveType::kBishopPromotion));
+      moves.push_back(CreateMove(square, toSquare, MoveType::kRookPromotion));
+      moves.push_back(CreateMove(square, toSquare, MoveType::kKnightPromotion));
+      moves.push_back(CreateMove(square, toSquare, MoveType::kQueenPromotion));
+    } else {
+      moves.push_back(CreateMove(square, toSquare));
     }
   }
-  PushPawnIfOpposite(moves, state.board, square, direction, -1);
-  PushPawnIfOpposite(moves, state.board, square, direction, +1);
   if (state.enPassant != Square::kInvalid) {
     const auto fileShift = GetFile(state.enPassant) - GetFile(square);
     const auto rankShift = GetRank(state.enPassant) - GetRank(square);
+    const auto direction = state.turn == Color::kWhite ? 1 : -1;
     if (std::abs(fileShift) == 1 && rankShift == direction) {
       moves.push_back(CreateMove(square, state.enPassant, MoveType::kEnPassant));
     }
   }
 }
 
-void GetMoves(const State& state, Square square, Moves& moves) {
+void GetMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
   const auto piece = state.board[square];
   switch (piece) {
   case Piece::kWhiteKing:
   case Piece::kBlackKing:
-    GetKingMoves(state, square, moves);
+    GetKingMoves(state, allyPieces, square, moves);
     break;
   case Piece::kWhiteQueen:
   case Piece::kBlackQueen:
-    GetQueenMoves(state, square, moves);
+    GetQueenMoves(state, allyPieces, square, moves);
     break;
   case Piece::kWhiteRook:
   case Piece::kBlackRook:
-    GetRookMoves(state, square, moves);
+    GetRookMoves(state, allyPieces, square, moves);
     break;
   case Piece::kWhiteBishop:
   case Piece::kBlackBishop:
-    GetBishopMoves(state, square, moves);
+    GetBishopMoves(state, allyPieces, square, moves);
     break;
   case Piece::kWhiteKnight:
   case Piece::kBlackKnight:
-    GetKnightMoves(state, square, moves);
+    GetKnightMoves(state, allyPieces, square, moves);
     break;
   case Piece::kWhitePawn:
   case Piece::kBlackPawn:
-    GetPawnMoves(state, square, moves);
+    GetPawnMoves(state, allyPieces, square, moves);
     break;
   }
 }
@@ -465,7 +394,8 @@ void GetLegalMoves(const State& state, Square square, Moves& legalMoves) {
   if (!CanMoveInTurn(state, square)) {
     return;
   }
-  GetMoves(state, square, moves);
+  const auto allyPieces = AllyPieces(state);
+  GetMoves(state, allyPieces, square, moves);
   for (const auto move : moves) {
     auto newState = State{state};
     MakeMove(newState, move);
