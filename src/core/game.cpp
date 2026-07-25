@@ -37,22 +37,17 @@ static BasePiece PromotionTypeToBasePiece(MoveType type) {
 }
 
 static bool MoveOrCapture(Board& board, const Move& move, Color color) {
+  const auto from = GetFrom(move);
+  const auto to = GetTo(move);
   const auto moveType = GetType(move);
   const auto isPromotion = IsPromotion(moveType);
   if (isPromotion) {
-    board[GetTo(move)] = MakePiece(color, PromotionTypeToBasePiece(moveType));
+    board[to] = MakePiece(color, PromotionTypeToBasePiece(moveType));
   } else {
-    board[GetTo(move)] = board[GetFrom(move)];
+    board[to] = board[from];
   }
-  board[GetFrom(move)] = Piece::kNone;
+  board[from] = Piece::kNone;
   return isPromotion;
-}
-
-void EnPassantCapture(Board& board, Square from, Square to) {
-  if (GetBasePiece(board[to]) == BasePiece::kPawn) {
-    const auto captureSquare = CreateSquare(GetFile(to), GetRank(from));
-    board[captureSquare] = Piece::kNone;
-  }
 }
 
 Square EvaluateEnPassant(const Board& board, Square from, Square to) {
@@ -226,28 +221,28 @@ void GetKingMoves(const State& state, Square square, Moves& moves) {
       if (state.whiteShortCastleAllowed) {
         if (state.board[F1] == Piece::kNone && state.board[G1] == Piece::kNone &&
             !IsAttacked(state, state.turn, 1ULL << F1)) {
-          moves.push_back(CreateMove(square, G1));
+          moves.push_back(CreateMove(square, G1, MoveType::kKingCastle));
         }
       }
       if (state.whiteLongCastleAllowed) {
         if (state.board[B1] == Piece::kNone && state.board[C1] == Piece::kNone &&
             state.board[D1] == Piece::kNone && !IsAttacked(state, state.turn, 1ULL << C1) &&
             !IsAttacked(state, state.turn, 1ULL << D1)) {
-          moves.push_back(CreateMove(square, C1));
+          moves.push_back(CreateMove(square, C1, MoveType::kQueenCastle));
         }
       }
     } else {
       if (state.blackShortCastleAllowed) {
         if (state.board[F8] == Piece::kNone && state.board[G8] == Piece::kNone &&
             !IsAttacked(state, state.turn, 1ULL << F8)) {
-          moves.push_back(CreateMove(square, G8));
+          moves.push_back(CreateMove(square, G8, MoveType::kKingCastle));
         }
       }
       if (state.blackLongCastleAllowed) {
         if (state.board[B8] == Piece::kNone && state.board[C8] == Piece::kNone &&
             state.board[D8] == Piece::kNone && !IsAttacked(state, state.turn, 1ULL << C8) &&
             !IsAttacked(state, state.turn, 1ULL << D8)) {
-          moves.push_back(CreateMove(square, C8));
+          moves.push_back(CreateMove(square, C8, MoveType::kQueenCastle));
         }
       }
     }
@@ -313,7 +308,7 @@ void GetPawnMoves(const State& state, Square square, Moves& moves) {
     const auto fileShift = GetFile(state.enPassant) - GetFile(square);
     const auto rankShift = GetRank(state.enPassant) - GetRank(square);
     if (std::abs(fileShift) == 1 && rankShift == direction) {
-      PushIfEmptyOrOpposite(moves, state.board, square, state.enPassant);
+      moves.push_back(CreateMove(square, state.enPassant, MoveType::kEnPassant));
     }
   }
 }
@@ -364,8 +359,10 @@ bool CanMoveInTurn(const State& state, Square square) {
 }
 
 void UpdateCastlingState(State& state, const Move& move) {
-  const auto fromPiece = state.board[GetFrom(move)];
-  const auto toPiece = state.board[GetTo(move)];
+  const auto from = GetFrom(move);
+  const auto to = GetTo(move);
+  const auto fromPiece = state.board[from];
+  const auto toPiece = state.board[to];
   const auto fromBasePiece = GetBasePiece(fromPiece);
   const auto toBasePiece = GetBasePiece(toPiece);
   if (fromBasePiece == BasePiece::kKing) {
@@ -377,52 +374,30 @@ void UpdateCastlingState(State& state, const Move& move) {
       state.blackLongCastleAllowed = false;
     }
   } else if (fromBasePiece == BasePiece::kRook) {
-    if (GetFrom(move) == A1) {
+    if (from == A1) {
       state.whiteLongCastleAllowed = false;
-    } else if (GetFrom(move) == H1) {
+    } else if (from == H1) {
       state.whiteShortCastleAllowed = false;
     }
-    if (GetFrom(move) == A8) {
+    if (from == A8) {
       state.blackLongCastleAllowed = false;
     }
-    if (GetFrom(move) == H8) {
+    if (from == H8) {
       state.blackShortCastleAllowed = false;
     }
   } else if (toBasePiece == BasePiece::kRook) {
-    if (GetTo(move) == A1) {
+    if (to == A1) {
       state.whiteLongCastleAllowed = false;
-    } else if (GetTo(move) == H1) {
+    } else if (to == H1) {
       state.whiteShortCastleAllowed = false;
     }
-    if (GetTo(move) == A8) {
+    if (to == A8) {
       state.blackLongCastleAllowed = false;
     }
-    if (GetTo(move) == H8) {
+    if (to == H8) {
       state.blackShortCastleAllowed = false;
     }
   }
-}
-
-static bool ProcessCastle(State& state, const Move& move) {
-  const auto piece = state.board[GetTo(move)];
-  const auto basePiece = GetBasePiece(piece);
-  if (basePiece != BasePiece::kKing) {
-    return false;
-  }
-  const auto fileShift = GetFile(GetFrom(move)) - GetFile(GetTo(move));
-  if (std::abs(fileShift) != 2) {
-    return false;
-  }
-  if (GetTo(move) == G1) {
-    std::swap(state.board[H1], state.board[F1]);
-  } else if (GetTo(move) == C1) {
-    std::swap(state.board[A1], state.board[D1]);
-  } else if (GetTo(move) == G8) {
-    std::swap(state.board[H8], state.board[F8]);
-  } else if (GetTo(move) == C8) {
-    std::swap(state.board[A8], state.board[D8]);
-  }
-  return true;
 }
 
 void MakeMove(State& state, const Move& move) {
@@ -431,28 +406,57 @@ void MakeMove(State& state, const Move& move) {
   const auto fromPiece = state.board[from];
   const auto toPiece = state.board[to];
   UpdateCastlingState(state, move);
-  auto needsFullBitboardRebuild = false;
   MoveOrCapture(state.board, move, state.turn);
-  if (state.enPassant != Square::kInvalid && to == state.enPassant) {
-    EnPassantCapture(state.board, from, to);
-    needsFullBitboardRebuild |= true;
+  const auto moveType = GetType(move);
+  if (moveType == MoveType::kEnPassant) {
+    const auto captureSquare = CreateSquare(GetFile(to), GetRank(from));
+    state.board[captureSquare] = Piece::kNone;
+    if (state.turn == Color::kWhite) {
+      state.bitboards[kBlackPawn] ^= 1ULL << captureSquare;
+    } else if (state.turn == Color::kBlack) {
+      state.bitboards[kWhitePawn] ^= 1ULL << captureSquare;
+    }
+    state.bitboards[kNone] ^= 1ULL << captureSquare;
+  } else if (moveType == MoveType::kKingCastle || moveType == MoveType::kQueenCastle) {
+    const auto to = GetTo(move);
+    if (to == G1) {
+      std::swap(state.board[H1], state.board[F1]);
+      state.bitboards[kWhiteRook] ^= (1ULL << H1);
+      state.bitboards[kWhiteRook] ^= (1ULL << F1);
+      state.bitboards[kNone] ^= (1ULL << H1);
+      state.bitboards[kNone] ^= (1ULL << F1);
+    } else if (to == C1) {
+      std::swap(state.board[A1], state.board[D1]);
+      state.bitboards[kWhiteRook] ^= (1ULL << A1);
+      state.bitboards[kWhiteRook] ^= (1ULL << D1);
+      state.bitboards[kNone] ^= (1ULL << A1);
+      state.bitboards[kNone] ^= (1ULL << D1);
+    } else if (to == G8) {
+      std::swap(state.board[H8], state.board[F8]);
+      state.bitboards[kBlackRook] ^= (1ULL << H8);
+      state.bitboards[kBlackRook] ^= (1ULL << F8);
+      state.bitboards[kNone] ^= (1ULL << H8);
+      state.bitboards[kNone] ^= (1ULL << F8);
+    } else if (to == C8) {
+      std::swap(state.board[A8], state.board[D8]);
+      state.bitboards[kBlackRook] ^= (1ULL << A8);
+      state.bitboards[kBlackRook] ^= (1ULL << D8);
+      state.bitboards[kNone] ^= (1ULL << A8);
+      state.bitboards[kNone] ^= (1ULL << D8);
+    }
   }
-  needsFullBitboardRebuild |= ProcessCastle(state, move);
   state.turn = SwitchColor(state.turn);
   state.enPassant = EvaluateEnPassant(state.board, from, to);
-  if (needsFullBitboardRebuild) {
-    FillBitboardsFromBoard(state);
-  } else {
-    const auto toPiece2 = state.board[to];
-    auto& e = state.bitboards[Piece::kNone];
-    auto& f = state.bitboards[fromPiece];
-    auto& t = state.bitboards[toPiece];
-    auto& t2 = state.bitboards[toPiece2];
-    f = InvertBit(f, from);
-    e = InvertBit(e, from);
-    t = InvertBit(t, to);
-    t2 = InvertBit(t2, to);
-  }
+
+  const auto toPiece2 = state.board[to];
+  auto& e = state.bitboards[Piece::kNone];
+  auto& f = state.bitboards[fromPiece];
+  auto& t = state.bitboards[toPiece];
+  auto& t2 = state.bitboards[toPiece2];
+  f = InvertBit(f, from);
+  e = InvertBit(e, from);
+  t = InvertBit(t, to);
+  t2 = InvertBit(t2, to);
 }
 
 void GetLegalMoves(const State& state, Square square, Moves& legalMoves) {
