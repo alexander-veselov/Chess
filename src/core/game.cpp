@@ -273,7 +273,6 @@ void GetMoves(const State& state, Bitboard allyPieces, Square square, Moves& mov
 }
 
 bool IsInCheck(const State& state, Color turn) {
-  auto occupancy = ~state.bitboards[Piece::kNone];
   if (turn == Color::kWhite) {
     return IsAttacked(state, turn, state.bitboards[kWhiteKing]);
   } else if (turn == Color::kBlack) {
@@ -406,11 +405,10 @@ void GetLegalMoves(const State& state, Square square, Moves& legalMoves) {
 }
 
 void GetAllLegalMoves(const State& state, Moves& legalMoves) {
-  for (auto squareIndex = 0; squareIndex < kBoardSize * kBoardSize; ++squareIndex) {
-    const auto square = static_cast<Square>(squareIndex);
-    if (GetPieceColor(state.board[square]) == state.turn) {
-      GetLegalMoves(state, square, legalMoves);
-    }
+  auto bitboard = AllyPieces(state);
+  while (bitboard) {
+    const auto square = PopLSB(bitboard);
+    GetLegalMoves(state, square, legalMoves);
   }
 }
 

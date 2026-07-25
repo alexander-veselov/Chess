@@ -261,6 +261,7 @@ constexpr Bitboard magicRookConstants[] = {
     2341912559029911619,  3940722690497666,     9799841860402028545,  6919791823729068066,
     1153494369761239050,  2969265531785226,     1152923987173511940,  144121939768672514};
 
+// TODO: remove duplication
 static U64 GenerateRandomU64() {
   static auto rng = std::mt19937{std::random_device{}()};
   auto dist = std::uniform_int_distribution<U64>{};
@@ -339,6 +340,11 @@ static Bitboard MagicRookAttacks(Square square, Bitboard occupancy) {
   return rookAttacks[square][occupancy];
 }
 
+static Bitboard MagicQueenAttacks(Square square, Bitboard occupancy) {
+  return MagicBishopAttacks(square, occupancy) |
+         MagicRookAttacks(square, occupancy);
+}
+
 static Bitboard BishopAttacks(Bitboard bitboard, Bitboard occupancy) {
   auto attacks = Bitboard{0ULL};
   while (bitboard) {
@@ -361,7 +367,7 @@ static Bitboard QueenAttacks(Bitboard bitboard, Bitboard occupancy) {
   auto attacks = Bitboard{0ULL};
   while (bitboard) {
     const auto from = PopLSB(bitboard);
-    attacks |= SingleQueenAttacks(from, occupancy);
+    attacks |= MagicQueenAttacks(from, occupancy);
   }
   return attacks;
 }
