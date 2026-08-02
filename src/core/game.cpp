@@ -1,6 +1,7 @@
 #include "chess/core/game.h"
 
 #include "chess/core/attacks.h"
+#include "chess/core/castling_rights.h"
 #include "chess/core/color.h"
 #include "chess/core/fen.h"
 
@@ -144,13 +145,13 @@ void GetKingMoves(const State& state, Bitboard allyPieces, Square square, Moves&
   GetKingMovesWithoutCastling(state, square, moves);
   if (!IsInCheck(state, state.turn)) {
     if (GetPieceColor(state.board[square]) == Color::kWhite) {
-      if (state.whiteShortCastleAllowed) {
+      if (CanCastle(state.castlingRightsMask, CastlingRight::kWhiteKingSide)) {
         if (state.board[F1] == Piece::kNone && state.board[G1] == Piece::kNone &&
             !IsAttacked(state, state.turn, BBFromSquare(F1))) {
           moves.push_back(CreateMove(square, G1, MoveType::kKingCastle));
         }
       }
-      if (state.whiteLongCastleAllowed) {
+      if (CanCastle(state.castlingRightsMask, CastlingRight::kWhiteQueenSide)) {
         if (state.board[B1] == Piece::kNone && state.board[C1] == Piece::kNone &&
             state.board[D1] == Piece::kNone && !IsAttacked(state, state.turn, BBFromSquare(C1)) &&
             !IsAttacked(state, state.turn, BBFromSquare(D1))) {
@@ -158,13 +159,13 @@ void GetKingMoves(const State& state, Bitboard allyPieces, Square square, Moves&
         }
       }
     } else {
-      if (state.blackShortCastleAllowed) {
+      if (CanCastle(state.castlingRightsMask, CastlingRight::kBlackKingSide)) {
         if (state.board[F8] == Piece::kNone && state.board[G8] == Piece::kNone &&
             !IsAttacked(state, state.turn, BBFromSquare(F8))) {
           moves.push_back(CreateMove(square, G8, MoveType::kKingCastle));
         }
       }
-      if (state.blackLongCastleAllowed) {
+      if (CanCastle(state.castlingRightsMask, CastlingRight::kBlackQueenSide)) {
         if (state.board[B8] == Piece::kNone && state.board[C8] == Piece::kNone &&
             state.board[D8] == Piece::kNone && !IsAttacked(state, state.turn, BBFromSquare(C8)) &&
             !IsAttacked(state, state.turn, BBFromSquare(D8))) {
@@ -284,35 +285,31 @@ void UpdateCastlingState(State& state, const Move& move) {
   const auto toBasePiece = GetBasePiece(toPiece);
   if (fromBasePiece == BasePiece::kKing) {
     if (state.turn == Color::kWhite) {
-      state.whiteShortCastleAllowed = false;
-      state.whiteLongCastleAllowed = false;
+      RemoveCastlingRight(state.castlingRightsMask, CastlingRight::kWhiteKingSide);
+      RemoveCastlingRight(state.castlingRightsMask, CastlingRight::kWhiteQueenSide);
     } else {
-      state.blackShortCastleAllowed = false;
-      state.blackLongCastleAllowed = false;
+      RemoveCastlingRight(state.castlingRightsMask, CastlingRight::kBlackKingSide);
+      RemoveCastlingRight(state.castlingRightsMask, CastlingRight::kBlackQueenSide);
     }
   } else if (fromBasePiece == BasePiece::kRook) {
     if (from == A1) {
-      state.whiteLongCastleAllowed = false;
+      RemoveCastlingRight(state.castlingRightsMask, CastlingRight::kWhiteQueenSide);
     } else if (from == H1) {
-      state.whiteShortCastleAllowed = false;
-    }
-    if (from == A8) {
-      state.blackLongCastleAllowed = false;
-    }
-    if (from == H8) {
-      state.blackShortCastleAllowed = false;
+      RemoveCastlingRight(state.castlingRightsMask, CastlingRight::kWhiteKingSide);
+    } else if (from == A8) {
+      RemoveCastlingRight(state.castlingRightsMask, CastlingRight::kBlackQueenSide);
+    } else if (from == H8) {
+      RemoveCastlingRight(state.castlingRightsMask, CastlingRight::kBlackKingSide);
     }
   } else if (toBasePiece == BasePiece::kRook) {
     if (to == A1) {
-      state.whiteLongCastleAllowed = false;
+      RemoveCastlingRight(state.castlingRightsMask, CastlingRight::kWhiteQueenSide);
     } else if (to == H1) {
-      state.whiteShortCastleAllowed = false;
-    }
-    if (to == A8) {
-      state.blackLongCastleAllowed = false;
-    }
-    if (to == H8) {
-      state.blackShortCastleAllowed = false;
+      RemoveCastlingRight(state.castlingRightsMask, CastlingRight::kWhiteKingSide);
+    } else if (to == A8) {
+      RemoveCastlingRight(state.castlingRightsMask, CastlingRight::kBlackQueenSide);
+    } else if (to == H8) {
+      RemoveCastlingRight(state.castlingRightsMask, CastlingRight::kBlackKingSide);
     }
   }
 }

@@ -2,8 +2,10 @@
 
 #include "chess/core/bitboard.h"
 #include "chess/core/board.h"
+#include "chess/core/castling_rights.h"
 #include "chess/core/color.h"
 #include "chess/core/square.h"
+#include "chess/core/types.h"
 
 #include <array>
 
@@ -11,16 +13,14 @@ namespace chess {
 
 struct State {
   Board board;
+  std::array<Bitboard, static_cast<size_t>(Piece::kPieceCount)> bitboards;
+
+  U16 halfmoveClock;
+  U16 fullmoveNumber;
+
   Color turn;
   Square enPassant;
-  bool blackLongCastleAllowed;
-  bool blackShortCastleAllowed;
-  bool whiteLongCastleAllowed;
-  bool whiteShortCastleAllowed;
-  U32 halfmoveClock;
-  U32 fullmoveNumber;
-
-  std::array<Bitboard, static_cast<size_t>(Piece::kPieceCount)> bitboards;
+  CastlingRightsMask castlingRightsMask;
 };
 
 constexpr void FillBitboardsFromBoard(State& state) {

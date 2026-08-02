@@ -11,46 +11,6 @@ size_t CharacterToDigit(char character) {
   return static_cast<size_t>(character - '0');
 }
 
-bool ParseCastlingRights(State& state, char character) {
-  switch (character) {
-  case 'q':
-    state.blackLongCastleAllowed = true;
-    break;
-  case 'k':
-    state.blackShortCastleAllowed = true;
-    break;
-  case 'Q':
-    state.whiteLongCastleAllowed = true;
-    break;
-  case 'K':
-    state.whiteShortCastleAllowed = true;
-    break;
-  default:
-    return false;
-  }
-  return true;
-}
-
-std::string CastlingRightsToString(const State& state) {
-  auto result = std::string{};
-  if (state.whiteShortCastleAllowed) {
-    result += 'K';
-  }
-  if (state.whiteLongCastleAllowed) {
-    result += 'Q';
-  }
-  if (state.blackShortCastleAllowed) {
-    result += 'k';
-  }
-  if (state.blackLongCastleAllowed) {
-    result += 'q';
-  }
-  if (result.empty()) {
-    return "-";
-  }
-  return result;
-}
-
 Square IndexToSquare(size_t index) {
   return CreateSquare(
       static_cast<File>(kBoardSize - (kBoardSize * kBoardSize - index - 1) % kBoardSize - 1),
@@ -93,17 +53,16 @@ bool ParseFEN(std::string_view fen, State& state) {
   characterIndex += 2;
 
   // Castling rights
-  state.whiteShortCastleAllowed = false;
-  state.whiteLongCastleAllowed = false;
-  state.blackShortCastleAllowed = false;
-  state.blackLongCastleAllowed = false;
+  state.castlingRightsMask = 0;
   if (fen[characterIndex] == '-') {
     characterIndex += 2;
   } else {
     for (; characterIndex < fen.size(); ++characterIndex) {
-      if (!ParseCastlingRights(state, fen[characterIndex])) {
+      auto right = CastlingRight{};
+      if (!ParseCastlingRight(fen.substr(characterIndex, 1), right)) {
         break;
       }
+      AddCastlingRight(state.castlingRightsMask, right);
     }
     characterIndex += 1;
   }
@@ -166,7 +125,7 @@ std::string StateToFEN(const State& state) {
   fen += ColorToString(state.turn);
 
   fen += " ";
-  fen += CastlingRightsToString(state);
+  fen += CastlingRightsMaskToString(state.castlingRightsMask);
 
   fen += " ";
   if (state.enPassant != Square::kInvalid) {

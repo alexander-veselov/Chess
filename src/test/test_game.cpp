@@ -17,10 +17,7 @@ TEST(Chess, FEN_Empty) {
   const auto state = chess::StateFromFEN("8/8/8/8/8/8/8/8 w - - 0 0");
   EXPECT_EQ(state.enPassant, chess::Square::kInvalid);
   EXPECT_EQ(state.turn, chess::Color::kWhite);
-  EXPECT_EQ(state.whiteShortCastleAllowed, false);
-  EXPECT_EQ(state.whiteLongCastleAllowed, false);
-  EXPECT_EQ(state.blackShortCastleAllowed, false);
-  EXPECT_EQ(state.blackLongCastleAllowed, false);
+  EXPECT_EQ(state.castlingRightsMask, 0);
   EXPECT_EQ(state.halfmoveClock, 0);
   EXPECT_EQ(state.fullmoveNumber, 0);
 }
@@ -29,10 +26,7 @@ TEST(Chess, FEN_Default) {
   const auto state = chess::StateFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
   EXPECT_EQ(state.enPassant, chess::Square::kInvalid);
   EXPECT_EQ(state.turn, chess::Color::kWhite);
-  EXPECT_EQ(state.whiteShortCastleAllowed, true);
-  EXPECT_EQ(state.whiteLongCastleAllowed, true);
-  EXPECT_EQ(state.blackShortCastleAllowed, true);
-  EXPECT_EQ(state.blackLongCastleAllowed, true);
+  EXPECT_EQ(state.castlingRightsMask, 0b1111);
   EXPECT_EQ(state.halfmoveClock, 0);
   EXPECT_EQ(state.fullmoveNumber, 1);
 }
@@ -83,10 +77,7 @@ TEST(Chess, FEN_EnPassant) {
   const auto state = chess::StateFromFEN("8/8/8/2k5/2pP4/8/B7/4K3 b - d3 0 3");
   EXPECT_EQ(state.enPassant, chess::D3);
   EXPECT_EQ(state.turn, chess::Color::kBlack);
-  EXPECT_EQ(state.whiteShortCastleAllowed, false);
-  EXPECT_EQ(state.whiteLongCastleAllowed, false);
-  EXPECT_EQ(state.blackShortCastleAllowed, false);
-  EXPECT_EQ(state.blackLongCastleAllowed, false);
+  EXPECT_EQ(state.castlingRightsMask, 0);
   EXPECT_EQ(state.halfmoveClock, 0);
   EXPECT_EQ(state.fullmoveNumber, 3);
 }
