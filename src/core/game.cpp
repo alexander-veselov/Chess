@@ -438,7 +438,7 @@ void MakeMove(State& state, const Move& move) {
       state.bitboards[kNone] ^= BBFromSquare(D8);
     }
   }
-  state.turn = SwitchColor(state.turn);
+  state.turn = FlipColor(state.turn);
   state.enPassant = EvaluateEnPassant(state.board, from, to);
 
   const auto toPiece2 = state.board[to];

@@ -6,6 +6,8 @@
 namespace chess {
 namespace {
 
+// TODO: refactor
+
 Piece CharacterToPiece(char character) {
   switch (character) {
   case 'r':
@@ -77,7 +79,7 @@ Color CharacterToColor(char character) {
   case 'b':
     return Color::kBlack;
   }
-  return Color::kNone;
+  return Color::kWhite;
 }
 
 char ColorToCharacter(Color color) {
