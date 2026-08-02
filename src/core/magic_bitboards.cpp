@@ -70,34 +70,34 @@ auto rookMagics = std::array<Magic, Square::kSquareCount>{};
 auto rookInitFlag = std::once_flag{};
 
 Bitboard BishopMask(Square square) {
-  return SingleBishopAttacks(square, 0ULL) & ~Edges;
+  return SingleBishopAttacks(square, kEmptyBoard) & ~kEdges;
 }
 
 Bitboard RookMask(Square square) {
   const auto rank = GetRank(square);
   const auto file = GetFile(square);
-  auto mask = ~Edges;
+  auto mask = ~kEdges;
   if (rank == _1) {
-    mask ^= FillRank(_1) ^ (1ULL << A1) ^ (1ULL << H1);
+    mask ^= FillRank(_1) ^ BBFromSquare(A1) ^ BBFromSquare(H1);
   }
   if (rank == _8) {
-    mask ^= FillRank(_8) ^ (1ULL << A8) ^ (1ULL << H8);
+    mask ^= FillRank(_8) ^ BBFromSquare(A8) ^ BBFromSquare(H8);
   }
   if (file == _A) {
-    mask ^= FillFile(_A) ^ (1ULL << A1) ^ (1ULL << A8);
+    mask ^= FillFile(_A) ^ BBFromSquare(A1) ^ BBFromSquare(A8);
   }
   if (file == _H) {
-    mask ^= FillFile(_H) ^ (1ULL << H1) ^ (1ULL << H8);
+    mask ^= FillFile(_H) ^ BBFromSquare(H1) ^ BBFromSquare(H8);
   }
-  return SingleRookAttacks(square, 0ULL) & mask;
+  return SingleRookAttacks(square, kEmptyBoard) & mask;
 }
 
 Bitboard OccupancyFromIndex(I32 index, Bitboard mask) {
-  auto occupancy = Bitboard{0ULL};
+  auto occupancy = kEmptyBoard;
   while (mask) {
     const auto square = PopLSB(mask);
     if (index & 1) {
-      occupancy |= (1ULL << square);
+      occupancy |= BBFromSquare(square);
     }
     index >>= 1;
   }
@@ -129,7 +129,7 @@ void InitializeBishopMagic() {
       occupancies[index] = OccupancyFromIndex(index, mask);
       attacks[index] = SingleBishopAttacks(Square(square), occupancies[index]);
     }
-    auto magic = Bitboard(0ULL);
+    auto magic = kEmptyBoard;
     magic = magicBishopConstants[square];
     // while (!TryMagic(magic, attacks, occupancies, kMagicShift)) {
     //   magic = RandomU64() & RandomU64() & RandomU64();
@@ -153,7 +153,7 @@ void InitializeRookMagic() {
       occupancies[index] = OccupancyFromIndex(index, mask);
       attacks[index] = SingleRookAttacks(Square(square), occupancies[index]);
     }
-    auto magic = Bitboard(0ULL);
+    auto magic = kEmptyBoard;
     magic = magicRookConstants[square];
     // while (!TryMagic(magic, attacks, occupancies, kRookShift)) {
     //   magic = RandomU64() & RandomU64() & RandomU64();

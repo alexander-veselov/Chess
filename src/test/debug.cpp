@@ -55,13 +55,13 @@ TEST(Chess, DISABLED_Debug) {
   const auto localPerft = chess::Divide(state, kDepth);
   const auto stockfishPerft = StorckfishDivide(fen.data(), moves, kDepth);
 
-  auto localCount = 0ull;
-  for (const auto [move, count] : localPerft) {
+  auto localCount = 0ULL;
+  for (const auto& [move, count] : localPerft) {
     localCount += count;
   }
 
-  auto stockfishCount = 0ull;
-  for (const auto [move, count] : stockfishPerft) {
+  auto stockfishCount = 0ULL;
+  for (const auto& [move, count] : stockfishPerft) {
     stockfishCount += count;
   }
 

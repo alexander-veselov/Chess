@@ -8,35 +8,35 @@
 namespace chess {
 
 constexpr Bitboard KnightAttacks(Bitboard bitboard) {
-  return ((bitboard & NotABFile) << (+NW + W)) |
-         ((bitboard & NotAFile ) << (+NW + N)) |
-         ((bitboard & NotHFile ) << (+NE + N)) |
-         ((bitboard & NotGHFile) << (+NE + E)) |
-         ((bitboard & NotGHFile) >> (-SE - E)) |
-         ((bitboard & NotHFile ) >> (-SE - S)) |
-         ((bitboard & NotAFile ) >> (-SW - S)) |
-         ((bitboard & NotABFile) >> (-SW - W));
+  return ((bitboard & kNotABFile) << (+NW + W)) |
+         ((bitboard & kNotAFile ) << (+NW + N)) |
+         ((bitboard & kNotHFile ) << (+NE + N)) |
+         ((bitboard & kNotGHFile) << (+NE + E)) |
+         ((bitboard & kNotGHFile) >> (-SE - E)) |
+         ((bitboard & kNotHFile ) >> (-SE - S)) |
+         ((bitboard & kNotAFile ) >> (-SW - S)) |
+         ((bitboard & kNotABFile) >> (-SW - W));
 }
 
 constexpr Bitboard KingAttacks(Bitboard bitboard) {
-  return ((bitboard & NotAFile) >> -SW) |
+  return ((bitboard & kNotAFile) >> -SW) |
          ((bitboard           ) >> -S ) |
-         ((bitboard & NotHFile) >> -SE) |
-         ((bitboard & NotAFile) >> -W) |
-         ((bitboard & NotHFile) << +E ) |
-         ((bitboard & NotAFile) << +NW) |
+         ((bitboard & kNotHFile) >> -SE) |
+         ((bitboard & kNotAFile) >> -W) |
+         ((bitboard & kNotHFile) << +E ) |
+         ((bitboard & kNotAFile) << +NW) |
          ((bitboard           ) << +N ) |
-         ((bitboard & NotHFile) << +NE);
+         ((bitboard & kNotHFile) << +NE);
 }
 
 constexpr Bitboard WhitePawnAttacks(Bitboard bitboard) {
-  return ((bitboard & NotAFile) << NW) |
-         ((bitboard & NotHFile) << NE);
+  return ((bitboard & kNotAFile) << NW) |
+         ((bitboard & kNotHFile) << NE);
 }
 
 constexpr Bitboard BlackPawnAttacks(Bitboard bitboard) {
-  return ((bitboard & NotAFile) >> -SW) |
-         ((bitboard & NotHFile) >> -SE);
+  return ((bitboard & kNotAFile) >> -SW) |
+         ((bitboard & kNotHFile) >> -SE);
 }
 
 constexpr Bitboard WhitePawnSinglePushes(Bitboard bitboard, Bitboard occupancy) {
@@ -44,7 +44,7 @@ constexpr Bitboard WhitePawnSinglePushes(Bitboard bitboard, Bitboard occupancy) 
 }
 
 constexpr Bitboard WhitePawnDoublePushes(Bitboard bitboard, Bitboard occupancy) {
-  return WhitePawnSinglePushes(WhitePawnSinglePushes(bitboard & _2Rank, occupancy), occupancy);
+  return WhitePawnSinglePushes(WhitePawnSinglePushes(bitboard & k2Rank, occupancy), occupancy);
 }
 
 constexpr Bitboard BlackPawnSinglePushes(Bitboard bitboard, Bitboard occupancy) {
@@ -52,20 +52,21 @@ constexpr Bitboard BlackPawnSinglePushes(Bitboard bitboard, Bitboard occupancy) 
 }
 
 constexpr Bitboard BlackPawnDoublePushes(Bitboard bitboard, Bitboard occupancy) {
-  return BlackPawnSinglePushes(BlackPawnSinglePushes(bitboard & _7Rank, occupancy), occupancy);
+  return BlackPawnSinglePushes(BlackPawnSinglePushes(bitboard & k7Rank, occupancy), occupancy);
 }
 
 constexpr Bitboard ShiftSquare(Square square, Direction direction) {
   const auto shifted = Square(square + direction);
-  return ValidSquare(shifted) && std::abs(GetFile(square) - GetFile(shifted)) <= 1 ? 1ULL << shifted
-                                                                                   : 0ULL;
+  return ValidSquare(shifted) && std::abs(GetFile(square) - GetFile(shifted)) <= 1
+             ? BBFromSquare(shifted)
+             : kEmptyBoard;
 }
 
 constexpr Bitboard SlidingAttacks(Square square, Bitboard occupancy, Direction direction) {
-  auto attacks = Bitboard(0ULL);
+  auto attacks = kEmptyBoard;
 
   auto shifted = square;
-  auto attack = Bitboard(0ULL);
+  auto attack = kEmptyBoard;
   while (attack = ShiftSquare(shifted, direction)) {
     shifted = Square(shifted + direction);
     attacks |= attack;
@@ -97,7 +98,7 @@ constexpr Bitboard SingleQueenAttacks(Square square, Bitboard occupancy) {
 }
 
 constexpr Bitboard BishopAttacks(Bitboard bitboard, Bitboard occupancy) {
-  auto attacks = Bitboard{0ULL};
+  auto attacks = kEmptyBoard;
   while (bitboard) {
     const auto from = PopLSB(bitboard);
     attacks |= SingleBishopAttacks(from, occupancy);
@@ -106,7 +107,7 @@ constexpr Bitboard BishopAttacks(Bitboard bitboard, Bitboard occupancy) {
 }
 
 constexpr Bitboard RookAttacks(Bitboard bitboard, Bitboard occupancy) {
-  auto attacks = Bitboard{0ULL};
+  auto attacks = kEmptyBoard;
   while (bitboard) {
     const auto from = PopLSB(bitboard);
     attacks |= SingleRookAttacks(from, occupancy);
@@ -115,7 +116,7 @@ constexpr Bitboard RookAttacks(Bitboard bitboard, Bitboard occupancy) {
 }
 
 constexpr Bitboard QueenAttacks(Bitboard bitboard, Bitboard occupancy) {
-  auto attacks = Bitboard{0ULL};
+  auto attacks = kEmptyBoard;
   while (bitboard) {
     const auto from = PopLSB(bitboard);
     attacks |= SingleQueenAttacks(from, occupancy);

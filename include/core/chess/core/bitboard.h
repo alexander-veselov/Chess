@@ -7,33 +7,46 @@ namespace chess {
 
 using Bitboard = U64;
 
-constexpr Bitboard AFile =
-    (1ULL << A1) |
-    (1ULL << A2) |
-    (1ULL << A3) |
-    (1ULL << A4) |
-    (1ULL << A5) |
-    (1ULL << A6) |
-    (1ULL << A7) |
-    (1ULL << A8);
+constexpr Bitboard BBFromSquare(Square square) {
+  return 1ULL << square;
+}
 
-constexpr Bitboard _1Rank = 0b11111111;
+constexpr Bitboard kAFile =
+    BBFromSquare(A1) |
+    BBFromSquare(A2) |
+    BBFromSquare(A3) |
+    BBFromSquare(A4) |
+    BBFromSquare(A5) |
+    BBFromSquare(A6) |
+    BBFromSquare(A7) |
+    BBFromSquare(A8);
+
+constexpr Bitboard k1Rank =
+    BBFromSquare(A1) |
+    BBFromSquare(B1) |
+    BBFromSquare(C1) |
+    BBFromSquare(D1) |
+    BBFromSquare(E1) |
+    BBFromSquare(F1) |
+    BBFromSquare(G1) |
+    BBFromSquare(H1);
 
 constexpr Bitboard FillFile(File file) {
-  return AFile << file;
+  return kAFile << file;
 }
 
 constexpr Bitboard FillRank(Rank rank) {
-  return _1Rank << (8 * rank);
+  return k1Rank << (8 * rank);
 }
 
-constexpr Bitboard _2Rank = FillRank(_2);
-constexpr Bitboard _7Rank = FillRank(_7);
-constexpr Bitboard NotAFile = ~FillFile(_A);
-constexpr Bitboard NotHFile = ~FillFile(_H);
-constexpr Bitboard NotABFile = ~(FillFile(_A) | FillFile(_B));
-constexpr Bitboard NotGHFile = ~(FillFile(_G) | FillFile(_H));
-constexpr Bitboard Edges = FillFile(_A) | FillFile(_H) | FillRank(_1) | FillRank(_8);
-constexpr Bitboard Corners = (1ULL << A1) | (1ULL << A8) | (1ULL << H1) | (1ULL << H8);
+constexpr Bitboard kEmptyBoard = 0ULL;
+constexpr Bitboard k2Rank = FillRank(_2);
+constexpr Bitboard k7Rank = FillRank(_7);
+constexpr Bitboard kNotAFile = ~FillFile(_A);
+constexpr Bitboard kNotHFile = ~FillFile(_H);
+constexpr Bitboard kNotABFile = ~(FillFile(_A) | FillFile(_B));
+constexpr Bitboard kNotGHFile = ~(FillFile(_G) | FillFile(_H));
+constexpr Bitboard kEdges = FillFile(_A) | FillFile(_H) | FillRank(_1) | FillRank(_8);
+constexpr Bitboard kCorners = BBFromSquare(A1) | BBFromSquare(A8) | BBFromSquare(H1) | BBFromSquare(H8);
 
 } // namespace chess

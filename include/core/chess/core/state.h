@@ -25,7 +25,7 @@ struct State {
 constexpr void FillBitboardsFromBoard(State& state) {
   state.bitboards = {};
   for (auto square = 0; square < Square::kSquareCount; ++square) {
-    state.bitboards[static_cast<size_t>(state.board[square])] |= (1ULL << square);
+    state.bitboards[static_cast<size_t>(state.board[square])] |= BBFromSquare(static_cast<Square>(square));
   }
 }
 
