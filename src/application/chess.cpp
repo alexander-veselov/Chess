@@ -93,19 +93,45 @@ public:
     HandleInput(game, selected, origin);
     DrawBoard(draw_list, game, origin, selected);
 
-    //if (status == Status::kBlackToMove) {
-    //  const auto engineMove = BestMove(game.GetState());
-    //  game.MakeMove(engineMove);
-    //  statusNeedsRefresh = true;
-    //  legalMovesNeedsRefresh = true;
-    //  isInCheckNeedsRefresh = true;
-    //}
+    if (status == Status::kBlackToMove) {
+      const auto engineMove = BestMove(game.GetState());
+      game.MakeMove(engineMove);
+      statusNeedsRefresh = true;
+      legalMovesNeedsRefresh = true;
+      isInCheckNeedsRefresh = true;
+    }
 
     ImGui::End();
     ImGui::PopStyleVar();
   }
 
 private:
+  MoveType DetermineMoveType(Square from, Square to, const Board& board) {
+    const auto fromPiece = board[from];
+    const auto fromBasePiece = GetBasePiece(fromPiece);
+    const auto fileDiff = std::abs(GetFile(from) - GetFile(to));
+    if (fromBasePiece == BasePiece::kKing && fileDiff == 2) {
+      switch (to) {
+      case G1:
+      case G8:
+        return MoveType::kKingCastle;
+      case C1:
+      case C8:
+        return MoveType::kQueenCastle;
+      }
+    } else if (fromBasePiece == BasePiece::kPawn) {
+      if (GetRank(to) == Rank::_1 || GetRank(to) == Rank::_8) {
+        return MoveType::kQueenPromotion; // TODO: implement promotion GUI
+      }
+      const auto rankDiff = std::abs(GetRank(from) - GetRank(to));
+      const auto toPiece = board[to];
+      if (fileDiff == 1 && rankDiff == 1 && toPiece == Piece::kNone) {
+        return MoveType::kEnPassant;
+      }
+    }
+    return MoveType::kNormal;
+  }
+
   void HandleInput(Game& game, std::optional<Square>& fromSquare, const ImVec2& origin) {
     if (!ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
       return;
@@ -130,16 +156,10 @@ private:
       Piece fromPiece = board[*fromSquare];
       if (toSquare == *fromSquare) {
         fromSquare = std::nullopt;
-      } else if (GetPieceColor(toPiece) == GetPieceColor(fromPiece)) {
+      } else if (toPiece != Piece::kNone && GetPieceColor(toPiece) == GetPieceColor(fromPiece)) {
         fromSquare = toSquare;
       } else {
-        
-        auto moveType = MoveType::kNormal;
-        if (GetBasePiece(fromPiece) == BasePiece::kPawn &&
-            (GetRank(toSquare) == Rank::_1 || GetRank(toSquare) == Rank::_8)) {
-          moveType = MoveType::kQueenPromotion; // TODO: implement promotion GUI
-        }
-        // TODO: determine moveType correctly
+        auto moveType = DetermineMoveType(*fromSquare, toSquare, board);
         auto move = CreateMove(*fromSquare, toSquare, moveType);
         game.MakeMove(move);
         statusNeedsRefresh = true;
