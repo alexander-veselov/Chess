@@ -1,111 +1,14 @@
 #include "chess/core/fen.h"
 
+#include "chess/core/color.h"
 #include "chess/core/piece.h"
 #include "chess/core/square.h"
 
 namespace chess {
 namespace {
 
-// TODO: refactor
-
-Piece CharacterToPiece(char character) {
-  switch (character) {
-  case 'r':
-    return Piece::kBlackRook;
-  case 'n':
-    return Piece::kBlackKnight;
-  case 'b':
-    return Piece::kBlackBishop;
-  case 'q':
-    return Piece::kBlackQueen;
-  case 'k':
-    return Piece::kBlackKing;
-  case 'p':
-    return Piece::kBlackPawn;
-  case 'R':
-    return Piece::kWhiteRook;
-  case 'N':
-    return Piece::kWhiteKnight;
-  case 'B':
-    return Piece::kWhiteBishop;
-  case 'Q':
-    return Piece::kWhiteQueen;
-  case 'K':
-    return Piece::kWhiteKing;
-  case 'P':
-    return Piece::kWhitePawn;
-  }
-  return Piece::kNone;
-}
-
-char PieceToCharacter(Piece piece) {
-  switch (piece) {
-  case Piece::kBlackRook:
-    return 'r';
-  case Piece::kBlackKnight:
-    return 'n';
-  case Piece::kBlackBishop:
-    return 'b';
-  case Piece::kBlackQueen:
-    return 'q';
-  case Piece::kBlackKing:
-    return 'k';
-  case Piece::kBlackPawn:
-    return 'p';
-  case Piece::kWhiteRook:
-    return 'R';
-  case Piece::kWhiteKnight:
-    return 'N';
-  case Piece::kWhiteBishop:
-    return 'B';
-  case Piece::kWhiteQueen:
-    return 'Q';
-  case Piece::kWhiteKing:
-    return 'K';
-  case Piece::kWhitePawn:
-    return 'P';
-  }
-  return '\0';
-}
-
 size_t CharacterToDigit(char character) {
   return static_cast<size_t>(character - '0');
-}
-
-Color CharacterToColor(char character) {
-  switch (character) {
-  case 'w':
-    return Color::kWhite;
-  case 'b':
-    return Color::kBlack;
-  }
-  return Color::kWhite;
-}
-
-char ColorToCharacter(Color color) {
-  switch (color) {
-  case Color::kWhite:
-    return 'w';
-  case Color::kBlack:
-    return 'b';
-  }
-  return '\0';
-}
-
-Rank CharacterToRank(char character) {
-  return static_cast<Rank>(CharacterToDigit(character) - 1);
-}
-
-File CharacterToFile(char character) {
-  return static_cast<File>(character - 'a' + File::_A);
-}
-
-char RankToCharacter(Rank rank) {
-  return '1' + rank;
-}
-
-char FileToCharacter(File file) {
-  return 'a' + file;
 }
 
 bool ParseCastlingRights(State& state, char character) {
@@ -156,8 +59,10 @@ Square IndexToSquare(size_t index) {
 
 } // namespace
 
-State StateFromFEN(const std::string& fen) {
-  auto state = State{};
+bool ParseFEN(std::string_view fen, State& state) {
+
+  // TODO: add more checks
+
   auto characterIndex = size_t{0};
 
   // Piece placement
@@ -173,14 +78,18 @@ State StateFromFEN(const std::string& fen) {
     }
     if (std::isalpha(character)) {
       const auto square = IndexToSquare(squareIndex++);
-      state.board[square] = CharacterToPiece(character);
+      if (!ParsePiece(fen.substr(characterIndex, 1), state.board[square])) {
+        return false;
+      }
     } else if (std::isdigit(character)) {
       squareIndex += CharacterToDigit(character);
     }
   }
 
   // Active color
-  state.turn = CharacterToColor(fen[characterIndex]);
+  if (!ParseColor(fen.substr(characterIndex, 1), state.turn)) {
+    return false;
+  }
   characterIndex += 2;
 
   // Castling rights
@@ -204,9 +113,9 @@ State StateFromFEN(const std::string& fen) {
     state.enPassant = Square::kInvalid;
     characterIndex += 2;
   } else {
-    const auto file = CharacterToFile(fen[characterIndex + 0]);
-    const auto rank = CharacterToRank(fen[characterIndex + 1]);
-    state.enPassant = CreateSquare(file, rank);
+    if (!ParseSquare(fen.substr(characterIndex, 2), state.enPassant)) {
+      return false;
+    }
     characterIndex += 3;
   }
 
@@ -224,10 +133,10 @@ State StateFromFEN(const std::string& fen) {
 
   FillBitboardsFromBoard(state);
 
-  return state;
+  return true;
 }
 
-std::string FENFromState(const State& state) {
+std::string StateToFEN(const State& state) {
   auto fen = std::string{};
   for (auto rank = I32{chess::Rank::_8}; rank >= I32{chess::Rank::_1}; --rank) {
     auto emptySquares = 0;
@@ -241,7 +150,7 @@ std::string FENFromState(const State& state) {
           fen += std::to_string(emptySquares);
           emptySquares = 0;
         }
-        fen += PieceToCharacter(piece);
+        fen += PieceToString(piece);
       }
     }
     if (emptySquares != 0) {
@@ -254,15 +163,15 @@ std::string FENFromState(const State& state) {
   }
 
   fen += " ";
-  fen += ColorToCharacter(state.turn);
+  fen += ColorToString(state.turn);
 
   fen += " ";
   fen += CastlingRightsToString(state);
 
   fen += " ";
   if (state.enPassant != Square::kInvalid) {
-    fen += FileToCharacter(GetFile(state.enPassant));
-    fen += RankToCharacter(GetRank(state.enPassant));
+    fen += FileToString(GetFile(state.enPassant));
+    fen += RankToString(GetRank(state.enPassant));
   } else {
     fen += "-";
   }
@@ -274,6 +183,14 @@ std::string FENFromState(const State& state) {
   fen += std::to_string(state.fullmoveNumber);
 
   return fen;
+}
+
+State StateFromFEN(std::string_view fen) {
+  auto state = State{};
+  if (!ParseFEN(fen, state)) {
+    throw std::exception("invalid FEN string");
+  }
+  return state;
 }
 
 } // namespace chess

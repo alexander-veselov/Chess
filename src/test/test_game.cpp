@@ -40,42 +40,42 @@ TEST(Chess, FEN_Default) {
 TEST(Chess, FEN_ViseVersa1) {
   const auto expectedFen = kPosition1;
   const auto state = chess::StateFromFEN(expectedFen);
-  const auto actualFen = chess::FENFromState(state);
+  const auto actualFen = chess::StateToFEN(state);
   EXPECT_EQ(expectedFen, actualFen);
 }
 
 TEST(Chess, FEN_ViseVersa2) {
   const auto expectedFen = kPosition2;
   const auto state = chess::StateFromFEN(expectedFen);
-  const auto actualFen = chess::FENFromState(state);
+  const auto actualFen = chess::StateToFEN(state);
   EXPECT_EQ(expectedFen, actualFen);
 }
 
 TEST(Chess, FEN_ViseVersa3) {
   const auto expectedFen = kPosition3;
   const auto state = chess::StateFromFEN(expectedFen);
-  const auto actualFen = chess::FENFromState(state);
+  const auto actualFen = chess::StateToFEN(state);
   EXPECT_EQ(expectedFen, actualFen);
 }
 
 TEST(Chess, FEN_ViseVersa4) {
   const auto expectedFen = kPosition4;
   const auto state = chess::StateFromFEN(expectedFen);
-  const auto actualFen = chess::FENFromState(state);
+  const auto actualFen = chess::StateToFEN(state);
   EXPECT_EQ(expectedFen, actualFen);
 }
 
 TEST(Chess, FEN_ViseVersa5) {
   const auto expectedFen = kPosition5;
   const auto state = chess::StateFromFEN(expectedFen);
-  const auto actualFen = chess::FENFromState(state);
+  const auto actualFen = chess::StateToFEN(state);
   EXPECT_EQ(expectedFen, actualFen);
 }
 
 TEST(Chess, FEN_ViseVersa6) {
   const auto expectedFen = kPosition6;
   const auto state = chess::StateFromFEN(expectedFen);
-  const auto actualFen = chess::FENFromState(state);
+  const auto actualFen = chess::StateToFEN(state);
   EXPECT_EQ(expectedFen, actualFen);
 }
 

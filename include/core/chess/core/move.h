@@ -48,6 +48,6 @@ constexpr bool IsPromotion(MoveType type) {
 }
 
 std::string MoveToString(Move move);
-bool ParseMove(const std::string& string, Move& move);
+bool ParseMove(std::string_view string, Move& move);
 
 } // namespace chess

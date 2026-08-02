@@ -39,8 +39,14 @@ constexpr Rank GetRank(Square square) {
   return static_cast<Rank>(square >> 3);
 }
 
+std::string FileToString(File file);
+bool ParseFile(std::string_view string, File& file);
+
+std::string RankToString(Rank rank);
+bool ParseRank(std::string_view string, Rank& rank);
+
 std::string SquareToString(Square square);
-bool ParseSquare(const std::string& string, Square& square);
+bool ParseSquare(std::string_view string, Square& square);
 
 
 } // namespace chess

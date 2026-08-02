@@ -81,7 +81,7 @@ TEST(Chess, DISABLED_CompareRandomPosition) {
   for (auto i = 0; i < kPositions; ++i) {
     // printf("%d/%d\n", i + 1, kPositions);
     const auto state = GenerateRandomState();
-    const auto fen = chess::FENFromState(state);
+    const auto fen = chess::StateToFEN(state);
     const auto localPerft = chess::Divide(state, kDepth);
     const auto stockfishPerft = StorckfishDivide(fen, {}, kDepth);
     EXPECT_EQ(localPerft, stockfishPerft) << fen;

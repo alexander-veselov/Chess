@@ -2,30 +2,60 @@
 
 namespace chess {
 
-std::string SquareToString(Square square) {
-  return {
-    static_cast<char>('a' + GetFile(square)),
-    static_cast<char>('1' + GetRank(square))
-  };
+std::string FileToString(File file) {
+  return std::string(1, static_cast<char>('A' + static_cast<U8>(file)));
 }
 
-bool ParseSquare(const std::string& string, Square& square) {
-  if (string.size() != 2) {
+bool ParseFile(std::string_view string, File& file) {
+  if (string.size() != 1) {
     return false;
   }
-  const auto fileChar = string[0];
-  const auto rankChar = string[1];
-  if (fileChar < 'a' || fileChar > 'h') {
+
+  const auto c = string[0];
+  if (c < 'a' || c > 'h') {
     return false;
   }
-  if (rankChar < '1' || rankChar > '8') {
-    return false;
-  }
-  const auto file = static_cast<File>(fileChar - 'a');
-  const auto rank = static_cast<Rank>(rankChar - '1');
-  square = CreateSquare(file, rank);
+
+  file = static_cast<File>(c - 'a');
   return true;
 }
 
+std::string RankToString(Rank rank) {
+  return std::string(1, static_cast<char>('1' + static_cast<U8>(rank)));
+}
+
+bool ParseRank(std::string_view string, Rank& rank) {
+  if (string.size() != 1) {
+    return false;
+  }
+
+  const auto c = string[0];
+  if (c < '1' || c > '8') {
+    return false;
+  }
+
+  rank = static_cast<Rank>(c - '1');
+  return true;
+}
+
+std::string SquareToString(Square square) {
+  return FileToString(GetFile(square)) + RankToString(GetRank(square));
+}
+
+bool ParseSquare(std::string_view string, Square& square) {
+  if (string.size() != 2) {
+    return false;
+  }
+  auto file = File{};
+  if (!ParseFile(string.substr(0, 1), file)) {
+    return false;
+  }
+  auto rank = Rank{};
+  if (!ParseRank(string.substr(1, 1), rank)) {
+    return false;
+  }
+  square = CreateSquare(file, rank);
+  return true;
+}
 
 } // namespace chess

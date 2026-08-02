@@ -1,6 +1,7 @@
 #include "chess/core/game.h"
 
 #include "chess/core/attacks.h"
+#include "chess/core/color.h"
 #include "chess/core/fen.h"
 
 namespace chess {

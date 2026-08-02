@@ -2,6 +2,7 @@
 
 #include "chess/core/bitboard.h"
 #include "chess/core/board.h"
+#include "chess/core/color.h"
 #include "chess/core/square.h"
 
 #include <array>

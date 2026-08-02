@@ -49,7 +49,7 @@ std::string MoveToString(Move move) {
   return result;
 }
 
-bool ParseMove(const std::string& string, Move& move) {
+bool ParseMove(std::string_view string, Move& move) {
   if (string.size() != 4 && string.size() != 5) {
     return false;
   }

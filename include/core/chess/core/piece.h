@@ -1,13 +1,11 @@
 #pragma once
 
 #include "chess/core/types.h"
+#include "chess/core/color.h"
+
+#include <string>
 
 namespace chess {
-
-enum class Color : U8 {
-  kWhite,
-  kBlack
-};
 
 enum class BasePiece : U8 {
   kNone,
@@ -52,8 +50,7 @@ constexpr BasePiece GetBasePiece(Piece piece) {
   return static_cast<BasePiece>(static_cast<U8>(piece) & 0b111);
 }
 
-constexpr Color FlipColor(Color color) {
-  return color == Color::kWhite ? Color::kBlack : Color::kWhite;
-}
+std::string PieceToString(Piece piece);
+bool ParsePiece(std::string_view string, Piece& piece);
 
 }
