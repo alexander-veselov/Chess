@@ -1,10 +1,9 @@
 #pragma once
 
 #include "chess/core/perft.h"
+
 #include "chess/core/game.h"
 #include "chess/core/move.h"
-
-#include <iostream>
 
 namespace chess {
 

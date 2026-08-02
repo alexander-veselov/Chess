@@ -1,15 +1,12 @@
 #include "chess/engine/engine.h"
 #include "chess/core/game.h"
 
+namespace chess {
 namespace {
 
 constexpr auto kMaxScore = 999.f;
 
-}
-
-namespace chess {
-
-static float_t EvaluateBasePiece(BasePiece basePiece) {
+float_t EvaluateBasePiece(BasePiece basePiece) {
   switch (basePiece) {
   case BasePiece::kPawn:
     return 1.f;
@@ -24,12 +21,12 @@ static float_t EvaluateBasePiece(BasePiece basePiece) {
   return 0.f;
 }
 
-static float_t EvaluatePiece(Piece piece) {
+float_t EvaluatePiece(Piece piece) {
   const auto baseValue = EvaluateBasePiece(GetBasePiece(piece));
   return GetPieceColor(piece) == Color::kWhite ? +baseValue : -baseValue;
 }
 
-static float_t EvaluateBoard(const Board& board) {
+float_t EvaluateBoard(const Board& board) {
   auto value = 0.f;
   for (const auto& piece : board) {
     value += EvaluatePiece(piece);
@@ -37,20 +34,7 @@ static float_t EvaluateBoard(const Board& board) {
   return value;
 }
 
-static bool IsGameOver(Status status) {
-  switch (status) {
-  case Status::kWhiteToMove:
-  case Status::kBlackToMove:
-    return false;
-  case Status::kWhiteWon:
-  case Status::kBlackWon:
-  case Status::kDraw:
-    return true;
-  }
-  return true;
-}
-
-static float_t GameOverScore(Status status) {
+float_t GameOverScore(Status status) {
   switch (status) {
   case Status::kWhiteWon:
     return +kMaxScore;
@@ -60,7 +44,7 @@ static float_t GameOverScore(Status status) {
   return 0.f;
 }
 
-static float_t ScorePenalty(float_t score, U32 depth, U32 maxDepth) {
+float_t ScorePenalty(float_t score, U32 depth, U32 maxDepth) {
   if (score == 0.f) {
     return 0.f;
   }
@@ -68,7 +52,7 @@ static float_t ScorePenalty(float_t score, U32 depth, U32 maxDepth) {
   return score > 0.f ? -penalty : +penalty;
 }
 
-static float_t EvaluateState(const State& state, Status status, U32 depth, U32 maxDepth) {
+float_t EvaluateState(const State& state, Status status, U32 depth, U32 maxDepth) {
   auto score = 0.f;
   if (IsGameOver(status)) {
     score = GameOverScore(status);
@@ -79,8 +63,7 @@ static float_t EvaluateState(const State& state, Status status, U32 depth, U32 m
   return score;
 }
 
-static float_t Quiesce(const State& state, float_t alpha, float_t beta, U32 depth,
-                       U32 maxDepth) {
+float_t Quiesce(const State& state, float_t alpha, float_t beta, U32 depth, U32 maxDepth) {
   const auto status = GetStatus(state);
   auto value = EvaluateState(state, status, depth, maxDepth);
   if (depth == 0 || IsGameOver(status)) {
@@ -118,8 +101,7 @@ static float_t Quiesce(const State& state, float_t alpha, float_t beta, U32 dept
   return value;
 }
 
-static float_t Minimax(const State& state, float_t alpha, float_t beta, U32 depth,
-                       U32 maxDepth) {
+float_t Minimax(const State& state, float_t alpha, float_t beta, U32 depth, U32 maxDepth) {
   const auto status = GetStatus(state);
   if (IsGameOver(status)) {
     return EvaluateState(state, status, depth, maxDepth);
@@ -155,6 +137,8 @@ static float_t Minimax(const State& state, float_t alpha, float_t beta, U32 dept
   }
   return value;
 }
+
+} // namespace
 
 Move BestMove(const State& state, U32 depth) {
   auto bestValue = 0.f;

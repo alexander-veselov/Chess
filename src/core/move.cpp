@@ -1,8 +1,9 @@
 #include "chess/core/move.h"
 
 namespace chess {
+namespace {
 
-static std::string PromotionToString(MoveType type) {
+std::string PromotionToString(MoveType type) {
   switch (type) {
   case MoveType::kKnightPromotion:
     return "n";
@@ -16,7 +17,7 @@ static std::string PromotionToString(MoveType type) {
   return "";
 }
 
-static bool ParsePromotion(char character, MoveType& type) {
+bool ParsePromotion(char character, MoveType& type) {
   switch (character) {
   case 'q':
     type = MoveType::kQueenPromotion;
@@ -35,6 +36,8 @@ static bool ParsePromotion(char character, MoveType& type) {
   }
   return true;
 }
+
+} // namespace
 
 std::string MoveToString(Move move) {
   auto result = std::string{};

@@ -27,6 +27,10 @@ constexpr Square CreateSquare(File file, Rank rank) {
   return static_cast<Square>(rank << 3 | file);
 }
 
+constexpr bool ValidSquare(Square square) {
+  return A1 <= square && square <= H8;
+}
+
 constexpr File GetFile(Square square) {
   return static_cast<File>(square & 0b111);
 }

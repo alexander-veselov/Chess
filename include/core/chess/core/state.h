@@ -1,8 +1,8 @@
 #pragma once
 
+#include "chess/core/bitboard.h"
 #include "chess/core/board.h"
 #include "chess/core/square.h"
-#include "chess/core/bitboard.h"
 
 #include <array>
 

@@ -8,7 +8,6 @@
 #include <vector>
 
 namespace chess {
-namespace test {
 
 Stockfish::Stockfish(const std::string& exePath) {
   SECURITY_ATTRIBUTES sa{};
@@ -182,5 +181,4 @@ std::map<std::string, U64> Stockfish::Perft(U32 depth) {
   return result;
 }
 
-} // namespace test
 } // namespace chess

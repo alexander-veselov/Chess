@@ -1,12 +1,15 @@
 #include <benchmark/benchmark.h>
 
+#include "chess/core/attacks.h"
 #include "chess/core/fen.h"
+#include "chess/core/magic_bitboards.h"
 #include "chess/core/perft.h"
+#include "chess/core/random.h"
 #include "chess/core/types.h"
 
 #include <random>
-#include <vector>
 #include <string_view>
+#include <vector>
 
 // History
 // 
@@ -96,20 +99,11 @@ static void PerftPosition6(benchmark::State& state) {
 }
 BENCHMARK(PerftPosition6)->DenseRange(1, 4)->MinTime(1.0)->Unit(benchmark::kMillisecond);
 
-// TODO: remove duplication
-
-static U64 GenerateRandomNumber(U64 min, U64 max) {
-  static auto rng = std::mt19937{std::random_device{}()};
-  auto dist = std::uniform_int_distribution<U64>{min, max};
-  return dist(rng);
-}
-
 static void NaiveRookAttacks(benchmark::State& state) {
   auto attacks = chess::Bitboard{};
   for (auto _ : state) {
-    const auto square = GenerateRandomNumber(0, 63);
-    const auto occupancy = GenerateRandomNumber(0, std::numeric_limits<U64>::max()) |
-                           GenerateRandomNumber(0, std::numeric_limits<U64>::max());
+    const auto square = chess::RandomU64(0, 63);
+    const auto occupancy = chess::RandomU64() | chess::RandomU64();
     benchmark::DoNotOptimize(attacks);
   }
 }
@@ -118,9 +112,8 @@ BENCHMARK(NaiveRookAttacks)->Iterations(100000000)->Unit(benchmark::kNanosecond)
 static void MagicRookAttacks(benchmark::State& state) {
   auto attacks = chess::Bitboard{};
   for (auto _ : state) {
-    const auto square = GenerateRandomNumber(0, 63);
-    const auto occupancy = GenerateRandomNumber(0, std::numeric_limits<U64>::max()) |
-                           GenerateRandomNumber(0, std::numeric_limits<U64>::max());
+    const auto square = chess::RandomU64(0, 63);
+    const auto occupancy = chess::RandomU64() | chess::RandomU64();
     attacks = chess::MagicRookAttacks(chess::Square(square), occupancy);
     benchmark::DoNotOptimize(attacks);
   }
@@ -130,8 +123,8 @@ BENCHMARK(MagicRookAttacks)->Iterations(100000000)->Unit(benchmark::kNanosecond)
 static void NaiveBishopAttacks(benchmark::State& state) {
   auto attacks = chess::Bitboard{};
   for (auto _ : state) {
-    const auto square = GenerateRandomNumber(0, 63);
-    const auto occupancy = GenerateRandomNumber(0, std::numeric_limits<U64>::max());
+    const auto square = chess::RandomU64(0, 63);
+    const auto occupancy = chess::RandomU64() | chess::RandomU64();
     attacks = chess::SingleBishopAttacks(chess::Square(square), occupancy);
     benchmark::DoNotOptimize(attacks);
   }
@@ -141,9 +134,8 @@ BENCHMARK(NaiveBishopAttacks)->Iterations(100000000)->Unit(benchmark::kNanosecon
 static void MagicBishopAttacks(benchmark::State& state) {
   auto attacks = chess::Bitboard{};
   for (auto _ : state) {
-    const auto square = GenerateRandomNumber(0, 63);
-    const auto occupancy = GenerateRandomNumber(0, std::numeric_limits<U64>::max()) |
-                           GenerateRandomNumber(0, std::numeric_limits<U64>::max());
+    const auto square = chess::RandomU64(0, 63);
+    const auto occupancy = chess::RandomU64() | chess::RandomU64();
     attacks = chess::MagicBishopAttacks(chess::Square(square), occupancy);
     benchmark::DoNotOptimize(attacks);
   }
@@ -153,9 +145,8 @@ BENCHMARK(MagicBishopAttacks)->Iterations(100000000)->Unit(benchmark::kNanosecon
 static void NaiveQueenAttacks(benchmark::State& state) {
   auto attacks = chess::Bitboard{};
   for (auto _ : state) {
-    const auto square = GenerateRandomNumber(0, 63);
-    const auto occupancy = GenerateRandomNumber(0, std::numeric_limits<U64>::max()) |
-                           GenerateRandomNumber(0, std::numeric_limits<U64>::max());
+    const auto square = chess::RandomU64(0, 63);
+    const auto occupancy = chess::RandomU64() | chess::RandomU64();
     attacks = chess::SingleQueenAttacks(chess::Square(square), occupancy);
     benchmark::DoNotOptimize(attacks);
   }
@@ -165,9 +156,8 @@ BENCHMARK(NaiveQueenAttacks)->Iterations(100000000)->Unit(benchmark::kNanosecond
 static void MagicQueenAttacks(benchmark::State& state) {
   auto attacks = chess::Bitboard{};
   for (auto _ : state) {
-    const auto square = GenerateRandomNumber(0, 63);
-    const auto occupancy = GenerateRandomNumber(0, std::numeric_limits<U64>::max()) |
-                           GenerateRandomNumber(0, std::numeric_limits<U64>::max());
+    const auto square = chess::RandomU64(0, 63);
+    const auto occupancy = chess::RandomU64() | chess::RandomU64();
     attacks = chess::MagicQueenAttacks(chess::Square(square), occupancy);
     benchmark::DoNotOptimize(attacks);
   }

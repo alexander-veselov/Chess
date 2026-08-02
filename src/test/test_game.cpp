@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
 #include "chess/core/fen.h"
-#include "chess/core/state.h"
 #include "chess/core/perft.h"
+#include "chess/core/state.h"
 
 namespace {
 constexpr auto kPosition1 = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";

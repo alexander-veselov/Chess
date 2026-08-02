@@ -1,28 +1,17 @@
 #include "chess/core/game.h"
+
+#include "chess/core/attacks.h"
 #include "chess/core/fen.h"
 
 namespace chess {
 
+namespace {
+
 State CreateDefaultState() {
-  auto state = chess::StateFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-  FillBitboardsFromBoard(state);
-  return state;
+  return chess::StateFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
-bool IsValidSquare(int rank, int file) {
-  return File::_A <= file && file <= File::_H && Rank::_1 <= rank && rank <= Rank::_8;
-}
-
-Square ShiftSquare(Square square, int rankShift, int fileShift) {
-  const auto rank = GetRank(square) + rankShift;
-  const auto file = GetFile(square) + fileShift;
-  if (!IsValidSquare(rank, file)) {
-    return square;
-  }
-  return CreateSquare(static_cast<File>(file), static_cast<Rank>(rank));
-}
-
-static BasePiece PromotionTypeToBasePiece(MoveType type) {
+BasePiece PromotionTypeToBasePiece(MoveType type) {
   switch (type) {
   case MoveType::kKnightPromotion:
     return BasePiece::kKnight;
@@ -36,7 +25,7 @@ static BasePiece PromotionTypeToBasePiece(MoveType type) {
   return BasePiece::kNone;
 }
 
-static bool MoveOrCapture(Board& board, const Move& move, Color color) {
+bool MoveOrCapture(Board& board, const Move& move, Color color) {
   const auto from = GetFrom(move);
   const auto to = GetTo(move);
   const auto moveType = GetType(move);
@@ -61,7 +50,7 @@ Square EvaluateEnPassant(const Board& board, Square from, Square to) {
   return Square::kInvalid;
 }
 
-static Bitboard AllyPieces(const State& state) {
+Bitboard AllyPieces(const State& state) {
   auto allyPieces = Bitboard{};
   if (state.turn == Color::kWhite) {
     allyPieces |= state.bitboards[kWhiteKing];
@@ -141,7 +130,16 @@ bool IsAttacked(const State& state, Color turn, Bitboard target) {
   return false;
 }
 
-static void GetKingMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
+bool IsInCheck(const State& state, Color turn) {
+  if (turn == Color::kWhite) {
+    return IsAttacked(state, turn, state.bitboards[kWhiteKing]);
+  } else if (turn == Color::kBlack) {
+    return IsAttacked(state, turn, state.bitboards[kBlackKing]);
+  }
+  return false;
+}
+
+void GetKingMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
   GetKingMovesWithoutCastling(state, square, moves);
   if (!IsInCheck(state, state.turn)) {
     if (GetPieceColor(state.board[square]) == Color::kWhite) {
@@ -176,7 +174,7 @@ static void GetKingMoves(const State& state, Bitboard allyPieces, Square square,
   }
 }
 
-static void GetRookMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
+void GetRookMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
   auto attacks = RookAttacks(1ULL << square, ~state.bitboards[kNone]) & ~allyPieces;
   while (attacks) {
     const auto to = PopLSB(attacks);
@@ -184,7 +182,7 @@ static void GetRookMoves(const State& state, Bitboard allyPieces, Square square,
   }
 }
 
-static void GetBishopMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
+void GetBishopMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
   auto attacks = BishopAttacks(1ULL << square, ~state.bitboards[kNone]) & ~allyPieces;
   while (attacks) {
     const auto to = PopLSB(attacks);
@@ -192,7 +190,7 @@ static void GetBishopMoves(const State& state, Bitboard allyPieces, Square squar
   }
 }
 
-static void GetQueenMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
+void GetQueenMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
   auto attacks = QueenAttacks(1ULL << square, ~state.bitboards[kNone]) & ~allyPieces;
   while (attacks) {
     const auto to = PopLSB(attacks);
@@ -200,7 +198,7 @@ static void GetQueenMoves(const State& state, Bitboard allyPieces, Square square
   }
 }
 
-static void GetKnightMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
+void GetKnightMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
   auto attacks = KnightAttacks(1ULL << square) & ~allyPieces;
   while (attacks) {
     const auto to = PopLSB(attacks);
@@ -208,7 +206,7 @@ static void GetKnightMoves(const State& state, Bitboard allyPieces, Square squar
   }
 }
 
-static void GetPawnMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
+void GetPawnMoves(const State& state, Bitboard allyPieces, Square square, Moves& moves) {
   const auto bitboard = 1ULL << square;
   auto attacks = Bitboard{0ULL};
   if (state.turn == Color::kWhite) {
@@ -272,16 +270,6 @@ void GetMoves(const State& state, Bitboard allyPieces, Square square, Moves& mov
   }
 }
 
-bool IsInCheck(const State& state, Color turn) {
-  if (turn == Color::kWhite) {
-    return IsAttacked(state, turn, state.bitboards[kWhiteKing]);
-  } else if (turn == Color::kBlack) {
-    return IsAttacked(state, turn, state.bitboards[kBlackKing]);
-  }
-
-  return false;
-}
-
 bool CanMoveInTurn(const State& state, Square square) {
   return GetPieceColor(state.board[square]) == state.turn;
 }
@@ -325,6 +313,83 @@ void UpdateCastlingState(State& state, const Move& move) {
     if (to == H8) {
       state.blackShortCastleAllowed = false;
     }
+  }
+}
+
+void GetLegalMoves(const State& state, Square square, Moves& legalMoves) {
+  auto& board = state.board;
+  auto moves = Moves{};
+  if (!CanMoveInTurn(state, square)) {
+    return;
+  }
+  const auto allyPieces = AllyPieces(state);
+  GetMoves(state, allyPieces, square, moves);
+  for (const auto move : moves) {
+    auto newState = State{state};
+    MakeMove(newState, move);
+    if (!IsInCheck(newState, state.turn)) {
+      legalMoves.push_back(move);
+    }
+  }
+}
+
+bool CanMove(const State& state, Square square) {
+  auto legalMoves = Moves{};
+  GetLegalMoves(state, square, legalMoves);
+  return !legalMoves.empty();
+}
+
+bool HasAvailableMoves(const State& state) {
+  for (auto squareIndex = 0; squareIndex < kBoardSize * kBoardSize; ++squareIndex) {
+    const auto square = static_cast<Square>(squareIndex);
+    if (GetPieceColor(state.board[square]) == state.turn) {
+      if (CanMove(state, square)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool LegalMove(State& state, const Move& move) {
+  if (GetFrom(move) == GetTo(move) || !CanMoveInTurn(state, GetFrom(move))) {
+    return false;
+  }
+  auto& board = state.board;
+  auto legalMoves = Moves{};
+  GetLegalMoves(state, GetFrom(move), legalMoves);
+  for (const auto legalMove : legalMoves) {
+    if (legalMove == move) {
+      MakeMove(state, legalMove);
+      return true;
+    }
+  }
+  return false;
+}
+
+} // namespace
+
+Status GetStatus(const State& state) {
+  const auto isInCheck = IsInCheck(state, state.turn);
+  const auto hasAvailableMoves = HasAvailableMoves(state);
+  if (!hasAvailableMoves) {
+    if (isInCheck) {
+      return state.turn == Color::kWhite ? Status::kBlackWon : Status::kWhiteWon;
+    } else {
+      return Status::kDraw;
+    }
+  }
+
+  // TODO: implement draw by repetition/insufficient material/etc
+
+  return state.turn == Color::kWhite ? Status::kWhiteToMove : Status::kBlackToMove;
+}
+
+void GetAllLegalMoves(const State& state, Moves& legalMoves) {
+  auto bitboard = AllyPieces(state);
+  while (bitboard) {
+    const auto square = PopLSB(bitboard);
+    GetLegalMoves(state, square, legalMoves);
   }
 }
 
@@ -377,89 +442,15 @@ void MakeMove(State& state, const Move& move) {
   state.enPassant = EvaluateEnPassant(state.board, from, to);
 
   const auto toPiece2 = state.board[to];
-  auto& e = state.bitboards[Piece::kNone];
-  auto& f = state.bitboards[fromPiece];
-  auto& t = state.bitboards[toPiece];
-  auto& t2 = state.bitboards[toPiece2];
-  f = InvertBit(f, from);
-  e = InvertBit(e, from);
-  t = InvertBit(t, to);
-  t2 = InvertBit(t2, to);
-}
+  auto& emptySquares = state.bitboards[Piece::kNone];
+  auto& movingPieces = state.bitboards[fromPiece];
+  auto& capturedPieces = state.bitboards[toPiece];
+  auto& destinationPiece = state.bitboards[toPiece2];
 
-void GetLegalMoves(const State& state, Square square, Moves& legalMoves) {
-  auto& board = state.board;
-  auto moves = Moves{};
-  if (!CanMoveInTurn(state, square)) {
-    return;
-  }
-  const auto allyPieces = AllyPieces(state);
-  GetMoves(state, allyPieces, square, moves);
-  for (const auto move : moves) {
-    auto newState = State{state};
-    MakeMove(newState, move);
-    if (!IsInCheck(newState, state.turn)) {
-      legalMoves.push_back(move);
-    }
-  }
-}
-
-void GetAllLegalMoves(const State& state, Moves& legalMoves) {
-  auto bitboard = AllyPieces(state);
-  while (bitboard) {
-    const auto square = PopLSB(bitboard);
-    GetLegalMoves(state, square, legalMoves);
-  }
-}
-
-bool CanMove(const State& state, Square square) {
-  auto legalMoves = Moves{};
-  GetLegalMoves(state, square, legalMoves);
-  return !legalMoves.empty();
-}
-
-bool HasAvailableMoves(const State& state) {
-  for (auto squareIndex = 0; squareIndex < kBoardSize * kBoardSize; ++squareIndex) {
-    const auto square = static_cast<Square>(squareIndex);
-    if (GetPieceColor(state.board[square]) == state.turn) {
-      if (CanMove(state, square)) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-Status GetStatus(const State& state) {
-  const auto isInCheck = IsInCheck(state, state.turn);
-  const auto hasAvailableMoves = HasAvailableMoves(state);
-  if (!hasAvailableMoves) {
-    if (isInCheck) {
-      return state.turn == Color::kWhite ? Status::kBlackWon : Status::kWhiteWon;
-    } else {
-      return Status::kDraw;
-    }
-  }
-
-  // TODO: implement draw by repetition/insufficient material/etc
-
-  return state.turn == Color::kWhite ? Status::kWhiteToMove : Status::kBlackToMove;
-}
-
-bool LegalMove(State& state, const Move& move) {
-  if (GetFrom(move) == GetTo(move) || !CanMoveInTurn(state, GetFrom(move))) {
-    return false;
-  }
-  auto& board = state.board;
-  auto legalMoves = Moves{};
-  GetLegalMoves(state, GetFrom(move), legalMoves);
-  for (const auto legalMove : legalMoves) {
-    if (legalMove == move) {
-      MakeMove(state, legalMove);
-      return true;
-    }
-  }
-  return false;
+  movingPieces = FlipBit(movingPieces, from);
+  emptySquares = FlipBit(emptySquares, from);
+  capturedPieces = FlipBit(capturedPieces, to);
+  destinationPiece = FlipBit(destinationPiece, to);
 }
 
 Game::Game()

@@ -1,10 +1,12 @@
 #include "chess/core/fen.h"
-#include "chess/core/square.h"
+
 #include "chess/core/piece.h"
+#include "chess/core/square.h"
 
 namespace chess {
+namespace {
 
-static Piece CharacterToPiece(char character) {
+Piece CharacterToPiece(char character) {
   switch (character) {
   case 'r':
     return Piece::kBlackRook;
@@ -34,7 +36,7 @@ static Piece CharacterToPiece(char character) {
   return Piece::kNone;
 }
 
-static char PieceToCharacter(Piece piece) {
+char PieceToCharacter(Piece piece) {
   switch (piece) {
   case Piece::kBlackRook:
     return 'r';
@@ -64,11 +66,11 @@ static char PieceToCharacter(Piece piece) {
   return '\0';
 }
 
-static size_t CharacterToDigit(char character) {
+size_t CharacterToDigit(char character) {
   return static_cast<size_t>(character - '0');
 }
 
-static Color CharacterToColor(char character) {
+Color CharacterToColor(char character) {
   switch (character) {
   case 'w':
     return Color::kWhite;
@@ -78,7 +80,7 @@ static Color CharacterToColor(char character) {
   return Color::kNone;
 }
 
-static char ColorToCharacter(Color color) {
+char ColorToCharacter(Color color) {
   switch (color) {
   case Color::kWhite:
     return 'w';
@@ -88,23 +90,23 @@ static char ColorToCharacter(Color color) {
   return '\0';
 }
 
-static Rank CharacterToRank(char character) {
+Rank CharacterToRank(char character) {
   return static_cast<Rank>(CharacterToDigit(character) - 1);
 }
 
-static File CharacterToFile(char character) {
+File CharacterToFile(char character) {
   return static_cast<File>(character - 'a' + File::_A);
 }
 
-static char RankToCharacter(Rank rank) {
+char RankToCharacter(Rank rank) {
   return '1' + rank;
 }
 
-static char FileToCharacter(File file) {
+char FileToCharacter(File file) {
   return 'a' + file;
 }
 
-static bool ParseCastlingRights(State& state, char character) {
+bool ParseCastlingRights(State& state, char character) {
   switch (character) {
   case 'q':
     state.blackLongCastleAllowed = true;
@@ -124,7 +126,7 @@ static bool ParseCastlingRights(State& state, char character) {
   return true;
 }
 
-static std::string CastlingRightsToString(const State& state) {
+std::string CastlingRightsToString(const State& state) {
   auto result = std::string{};
   if (state.whiteShortCastleAllowed) {
     result += 'K';
@@ -144,11 +146,13 @@ static std::string CastlingRightsToString(const State& state) {
   return result;
 }
 
-static Square IndexToSquare(size_t index) {
+Square IndexToSquare(size_t index) {
   return CreateSquare(
       static_cast<File>(kBoardSize - (kBoardSize * kBoardSize - index - 1) % kBoardSize - 1),
       static_cast<Rank>((kBoardSize * kBoardSize - index - 1) / kBoardSize));
 }
+
+} // namespace
 
 State StateFromFEN(const std::string& fen) {
   auto state = State{};
@@ -192,7 +196,7 @@ State StateFromFEN(const std::string& fen) {
     }
     characterIndex += 1;
   }
-  
+
   // Possible en passant targets
   if (fen[characterIndex] == '-') {
     state.enPassant = Square::kInvalid;
@@ -266,7 +270,7 @@ std::string FENFromState(const State& state) {
 
   fen += " ";
   fen += std::to_string(state.fullmoveNumber);
-  
+
   return fen;
 }
 

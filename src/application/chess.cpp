@@ -93,13 +93,13 @@ public:
     HandleInput(game, selected, origin);
     DrawBoard(draw_list, game, origin, selected);
 
-    if (status == Status::kBlackToMove) {
-      const auto engineMove = BestMove(game.GetState());
-      game.MakeMove(engineMove);
-      statusNeedsRefresh = true;
-      legalMovesNeedsRefresh = true;
-      isInCheckNeedsRefresh = true;
-    }
+    //if (status == Status::kBlackToMove) {
+    //  const auto engineMove = BestMove(game.GetState());
+    //  game.MakeMove(engineMove);
+    //  statusNeedsRefresh = true;
+    //  legalMovesNeedsRefresh = true;
+    //  isInCheckNeedsRefresh = true;
+    //}
 
     ImGui::End();
     ImGui::PopStyleVar();
@@ -139,6 +139,7 @@ private:
             (GetRank(toSquare) == Rank::_1 || GetRank(toSquare) == Rank::_8)) {
           moveType = MoveType::kQueenPromotion; // TODO: implement promotion GUI
         }
+        // TODO: determine moveType correctly
         auto move = CreateMove(*fromSquare, toSquare, moveType);
         game.MakeMove(move);
         statusNeedsRefresh = true;

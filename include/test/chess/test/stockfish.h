@@ -9,7 +9,6 @@
 typedef void* HANDLE;
 
 namespace chess {
-namespace test {
 
 class Stockfish {
 public:
@@ -31,5 +30,4 @@ private:
   HANDLE stdout_{};
 };
 
-} // namespace test
 } // namespace chess
