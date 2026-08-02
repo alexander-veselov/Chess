@@ -70,7 +70,7 @@ float_t Quiesce(const State& state, float_t alpha, float_t beta, U32 depth, U32 
     return value;
   }
   auto moves = Moves{};
-  GetAllLegalMoves(state, moves);
+  GetLegalMoves(state, moves);
   if (state.turn == Color::kWhite) {
     for (const auto& move : moves) {
       if (state.board[GetTo(move)] == Piece::kNone) {
@@ -111,7 +111,7 @@ float_t Minimax(const State& state, float_t alpha, float_t beta, U32 depth, U32 
   }
   auto value = 0.f;
   auto moves = Moves{};
-  GetAllLegalMoves(state, moves);
+  GetLegalMoves(state, moves);
   if (state.turn == Color::kWhite) {
     value = -kMaxScore;
     for (const auto& move : moves) {
@@ -146,7 +146,7 @@ Move BestMove(const State& state, U32 depth) {
   auto moves = Moves{};
   auto alpha = -kMaxScore;
   auto beta = +kMaxScore;
-  GetAllLegalMoves(state, moves);
+  GetLegalMoves(state, moves);
   if (!moves.empty()) {
     bestMove = moves[0];
   }

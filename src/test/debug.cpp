@@ -26,7 +26,7 @@ chess::State GenerateRandomState() {
   const auto moveCount = chess::RandomU32(0, 200);
   for (auto i = 0; i < moveCount; ++i) {
     auto legalMoves = chess::Moves{};
-    chess::GetAllLegalMoves(state, legalMoves);
+    chess::GetLegalMoves(state, legalMoves);
     if (legalMoves.empty()) {
       return state;
     }
@@ -39,8 +39,8 @@ chess::State GenerateRandomState() {
 } // namespace
 
 TEST(Chess, DISABLED_Debug) {
-  constexpr auto kDepth = 6;
-  constexpr auto fen = std::string_view{"8/3pp3/5k2/8/8/5K2/3PP3/8 w - - 0 1"};
+  constexpr auto kDepth = 3;
+  constexpr auto fen = std::string_view{"2rk1bn1/p1p1p1p1/1Q1p1p2/5Pp1/PP4P1/4q3/3Bb3/2R1KB1r w K - 0 1"};
 
   auto moves = std::vector<chess::Move>{};
   //moves.push_back(MoveFromString("g2g4"));
@@ -76,10 +76,10 @@ TEST(Chess, DISABLED_Debug) {
 }
 
 TEST(Chess, DISABLED_CompareRandomPosition) {
-  constexpr auto kPositions = 100;
-  constexpr auto kDepth = 4;
+  constexpr auto kPositions = 10000;
+  constexpr auto kDepth = 3;
   for (auto i = 0; i < kPositions; ++i) {
-    // printf("%d/%d\n", i + 1, kPositions);
+    printf("%d/%d\n", i + 1, kPositions);
     const auto state = GenerateRandomState();
     const auto fen = chess::StateToFEN(state);
     const auto localPerft = chess::Divide(state, kDepth);

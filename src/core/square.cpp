@@ -3,7 +3,7 @@
 namespace chess {
 
 std::string FileToString(File file) {
-  return std::string(1, static_cast<char>('A' + static_cast<U8>(file)));
+  return std::string(1, static_cast<char>('a' + static_cast<U8>(file)));
 }
 
 bool ParseFile(std::string_view string, File& file) {

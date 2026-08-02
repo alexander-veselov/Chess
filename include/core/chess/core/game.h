@@ -9,7 +9,7 @@
 namespace chess {
 
 Status GetStatus(const State& state);
-void GetAllLegalMoves(const State& state, Moves& legalMoves);
+void GetLegalMoves(const State& state, Moves& legalMoves);
 void MakeMove(State& state, const Move& move);
 
 class Game {
