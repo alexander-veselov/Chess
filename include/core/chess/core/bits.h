@@ -17,6 +17,10 @@ constexpr Square PopLSB(U64& value) {
   return square;
 }
 
+constexpr U32 PopCount(U64 value) {
+  return std::popcount(value);
+}
+
 constexpr U64 SetBit(U64 value, U8 position) {
   return value | (1ULL << position);
 }

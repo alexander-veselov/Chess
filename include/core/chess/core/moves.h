@@ -25,6 +25,8 @@ public:
 
   void push_back(Move move);
 
+  Container::iterator begin();
+  Container::iterator end();
   Container::const_iterator begin() const;
   Container::const_iterator end() const;
 };

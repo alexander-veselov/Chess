@@ -21,6 +21,14 @@ bool Moves::empty() const {
   return moveCount_ == 0ULL;
 }
 
+Moves::Container::iterator Moves::begin() {
+  return moves_.begin();
+}
+
+Moves::Container::iterator Moves::end() {
+  return moves_.begin() + moveCount_;
+}
+
 Moves::Container::const_iterator Moves::begin() const {
   return moves_.begin();
 }

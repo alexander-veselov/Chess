@@ -62,7 +62,7 @@ file(GLOB BENCHMARK_HEADERS ${BENCHMARK_INCLUDE_FOLDER}/chess/benchmark/*.h)
 file(GLOB BENCHMARK_SOURCES ${BENCHMARK_SOURCE_FOLDER}/*.cpp)
 add_executable(Benchmark ${BENCHMARK_HEADERS} ${BENCHMARK_SOURCES})
 target_include_directories(Benchmark PUBLIC ${BENCHMARK_INCLUDE_FOLDER})
-target_link_libraries(Benchmark PRIVATE Core benchmark::benchmark benchmark::benchmark_main)
+target_link_libraries(Benchmark PRIVATE Core Engine benchmark::benchmark benchmark::benchmark_main)
 set_property(TARGET Benchmark PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Application)

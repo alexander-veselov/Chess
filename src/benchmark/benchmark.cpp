@@ -6,6 +6,7 @@
 #include "chess/core/perft.h"
 #include "chess/core/random.h"
 #include "chess/core/types.h"
+#include "chess/engine/engine.h"
 
 #include <random>
 #include <string_view>
@@ -55,6 +56,15 @@ static void Perft(benchmark::State& state, std::string_view position, U32 depth)
   }
   state.counters["Nodes/s"] =
       benchmark::Counter(static_cast<double>(nodes), benchmark::Counter::kIsIterationInvariantRate);
+}
+
+static void Engine(benchmark::State& state, std::string_view position, U32 depth) {
+  const auto gameState = chess::StateFromFEN(position.data());
+  auto move = chess::Move{};
+  for (auto _ : state) {
+    move = chess::BestMove(gameState, depth);
+    benchmark::DoNotOptimize(move);
+  }
 }
 
 static void ColdRun(benchmark::State& state) {
@@ -163,3 +173,9 @@ static void MagicQueenAttacks(benchmark::State& state) {
   }
 }
 BENCHMARK(MagicQueenAttacks)->Iterations(100000000)->Unit(benchmark::kNanosecond);
+
+static void Engine1(benchmark::State& state) {
+  constexpr auto kPosition = "r4br1/3b1kpp/1q1P4/1pp1RP1N/p7/6Q1/PPB3PP/2KR4 w - - 0 1";
+  Engine(state, kPosition, static_cast<U32>(state.range(0)));
+}
+BENCHMARK(Engine1)->DenseRange(1, 4)->MinTime(1.0)->Unit(benchmark::kMillisecond);
