@@ -61,13 +61,11 @@ constexpr auto kBishopPositions = 512;
 constexpr auto kBishopShift = 64 - 9;
 auto bishopAttacks = std::array<std::array<Bitboard, kBishopPositions>, Square::kSquareCount>{};
 auto bishopMagics = std::array<Magic, Square::kSquareCount>{};
-auto bishopInitFlag = std::once_flag{};
 
 constexpr auto kRookPositions = 4096;
 constexpr auto kRookShift = 64 - 12;
 auto rookAttacks = std::array<std::array<Bitboard, kRookPositions>, Square::kSquareCount>{};
 auto rookMagics = std::array<Magic, Square::kSquareCount>{};
-auto rookInitFlag = std::once_flag{};
 
 Bitboard BishopMask(Square square) {
   return SingleBishopAttacks(square, kEmptyBoard) & ~kEdges;
@@ -167,10 +165,18 @@ void InitializeRookMagic() {
   }
 }
 
+struct MagicInitializer {
+  MagicInitializer() {
+    InitializeBishopMagic();
+    InitializeRookMagic();
+  }
+};
+
+const auto kMagicInitializer = MagicInitializer{};
+
 } // namespace
 
 Bitboard MagicBishopAttacks(Square square, Bitboard occupancy) {
-  std::call_once(bishopInitFlag, InitializeBishopMagic);
   occupancy &= bishopMagics[square].mask;
   occupancy *= bishopMagics[square].magic;
   occupancy >>= kBishopShift;
@@ -178,7 +184,6 @@ Bitboard MagicBishopAttacks(Square square, Bitboard occupancy) {
 }
 
 Bitboard MagicRookAttacks(Square square, Bitboard occupancy) {
-  std::call_once(rookInitFlag, InitializeRookMagic);
   occupancy &= rookMagics[square].mask;
   occupancy *= rookMagics[square].magic;
   occupancy >>= kRookShift;

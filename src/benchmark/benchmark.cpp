@@ -114,6 +114,7 @@ static void NaiveRookAttacks(benchmark::State& state) {
   for (auto _ : state) {
     const auto square = chess::RandomU64(0, 63);
     const auto occupancy = chess::RandomU64() | chess::RandomU64();
+    attacks = chess::SingleRookAttacks(chess::Square(square), occupancy);
     benchmark::DoNotOptimize(attacks);
   }
 }

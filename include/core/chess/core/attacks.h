@@ -3,6 +3,7 @@
 #include "chess/core/bitboard.h"
 #include "chess/core/bits.h"
 #include "chess/core/direction.h"
+#include "chess/core/magic_bitboards.h"
 #include "chess/core/square.h"
 
 namespace chess {
@@ -101,7 +102,7 @@ constexpr Bitboard BishopAttacks(Bitboard bitboard, Bitboard occupancy) {
   auto attacks = kEmptyBoard;
   while (bitboard) {
     const auto from = PopLSB(bitboard);
-    attacks |= SingleBishopAttacks(from, occupancy);
+    attacks |= MagicBishopAttacks(from, occupancy);
   }
   return attacks;
 }
@@ -110,7 +111,7 @@ constexpr Bitboard RookAttacks(Bitboard bitboard, Bitboard occupancy) {
   auto attacks = kEmptyBoard;
   while (bitboard) {
     const auto from = PopLSB(bitboard);
-    attacks |= SingleRookAttacks(from, occupancy);
+    attacks |= MagicRookAttacks(from, occupancy);
   }
   return attacks;
 }
@@ -119,7 +120,7 @@ constexpr Bitboard QueenAttacks(Bitboard bitboard, Bitboard occupancy) {
   auto attacks = kEmptyBoard;
   while (bitboard) {
     const auto from = PopLSB(bitboard);
-    attacks |= SingleQueenAttacks(from, occupancy);
+    attacks |= MagicQueenAttacks(from, occupancy);
   }
   return attacks;
 }
