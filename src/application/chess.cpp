@@ -138,29 +138,29 @@ private:
     }
 
     ImVec2 mouse = ImGui::GetMousePos();
-    Square toSquare = ScreenToSquare(origin, mouse);
+    Square clickedSquare = ScreenToSquare(origin, mouse);
 
-    if (!IsValidSquare(toSquare)) {
+    if (!IsValidSquare(clickedSquare)) {
       return;
     }
 
     const Board& board = game.GetState().board;
 
-    Piece toPiece = board[toSquare];
+    Piece clickedPiece = board[clickedSquare];
 
     if (!fromSquare) {
-      if (toPiece != Piece::kNone && game.CanMove(toSquare)) {
-        fromSquare = toSquare;
+      if (clickedPiece != Piece::kNone && game.CanMove(clickedSquare)) {
+        fromSquare = clickedSquare;
       }
     } else {
       Piece fromPiece = board[*fromSquare];
-      if (toSquare == *fromSquare) {
+      if (clickedSquare == *fromSquare) {
         fromSquare = std::nullopt;
-      } else if (toPiece != Piece::kNone && GetPieceColor(toPiece) == GetPieceColor(fromPiece)) {
-        fromSquare = toSquare;
+      } else if (clickedPiece != Piece::kNone && GetPieceColor(clickedPiece) == GetPieceColor(fromPiece)) {
+        fromSquare = clickedSquare;
       } else {
-        auto moveType = DetermineMoveType(*fromSquare, toSquare, board);
-        auto move = CreateMove(*fromSquare, toSquare, moveType);
+        auto moveType = DetermineMoveType(*fromSquare, clickedSquare, board);
+        auto move = CreateMove(*fromSquare, clickedSquare, moveType);
         game.MakeMove(move);
         statusNeedsRefresh = true;
         legalMovesNeedsRefresh = true;

@@ -73,7 +73,7 @@ Bitboard AllyPieces(const State& state) {
 }
 
 bool IsAttacked(const State& state, Color turn, Bitboard target) {
-  auto occupancy = ~state.bitboards[Piece::kNone];
+  const auto occupancy = ~state.bitboards[Piece::kNone];
   if (turn == Color::kWhite) {
     if ((BlackPawnAttacks(state.bitboards[kBlackPawn]) & target) != 0) {
       return true;
@@ -133,6 +133,7 @@ bool IsInCheck(const State& state, Color turn) {
 }
 
 void GetKingMoves(const State& state, Bitboard allyPieces, Bitboard kings, Moves& moves) {
+  const auto isInCheck = IsInCheck(state, state.turn);
   while (kings) {
     const auto from = PopLSB(kings);
     auto attacks = KingAttacks(BBFromSquare(from)) & ~allyPieces;
@@ -140,7 +141,7 @@ void GetKingMoves(const State& state, Bitboard allyPieces, Bitboard kings, Moves
       const auto to = PopLSB(attacks);
       moves.push_back(CreateMove(from, to));
     }
-    if (!IsInCheck(state, state.turn)) {
+    if (!isInCheck) {
       if (GetPieceColor(state.board[from]) == Color::kWhite) {
         if (CanCastle(state.castlingRightsMask, CastlingRight::kWhiteKingSide)) {
           if (state.board[F1] == Piece::kNone && state.board[G1] == Piece::kNone &&
@@ -272,7 +273,8 @@ void UpdateCastlingState(State& state, const Move& move) {
       RemoveCastlingRight(state.castlingRightsMask, CastlingRight::kBlackKingSide);
       RemoveCastlingRight(state.castlingRightsMask, CastlingRight::kBlackQueenSide);
     }
-  } else if (fromBasePiece == BasePiece::kRook) {
+  }
+  if (fromBasePiece == BasePiece::kRook) {
     if (from == A1) {
       RemoveCastlingRight(state.castlingRightsMask, CastlingRight::kWhiteQueenSide);
     } else if (from == H1) {
@@ -282,7 +284,8 @@ void UpdateCastlingState(State& state, const Move& move) {
     } else if (from == H8) {
       RemoveCastlingRight(state.castlingRightsMask, CastlingRight::kBlackKingSide);
     }
-  } else if (toBasePiece == BasePiece::kRook) {
+  }
+  if (toBasePiece == BasePiece::kRook) {
     if (to == A1) {
       RemoveCastlingRight(state.castlingRightsMask, CastlingRight::kWhiteQueenSide);
     } else if (to == H1) {
@@ -296,11 +299,11 @@ void UpdateCastlingState(State& state, const Move& move) {
 }
 
 bool CanMove(const State& state, Square square) {
-  // TODO: remove or improve that function
+  // TODO: improve that function
   auto legalMoves = Moves{};
   GetLegalMoves(state, legalMoves);
   for (const auto move : legalMoves) {
-    if (GetTo(move) == square) {
+    if (GetFrom(move) == square) {
       return true;
     }
   }
@@ -453,9 +456,16 @@ bool Game::MakeMove(const Move& move) {
 }
 
 Moves Game::GetLegalMoves(Square square) const {
+  // TODO: improve that function
+  auto movesForSquare = Moves{};
   auto legalMoves = Moves{};
   chess::GetLegalMoves(state_, legalMoves);
-  return legalMoves;
+  for (const auto move : legalMoves) {
+    if (GetFrom(move) == square) {
+      movesForSquare.push_back(move);
+    }
+  }
+  return movesForSquare;
 }
 
 } // namespace chess

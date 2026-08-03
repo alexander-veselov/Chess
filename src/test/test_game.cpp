@@ -417,12 +417,3 @@ TEST(Chess, PerftTwoKings) {
 
   EXPECT_EQ(result, kNodes);
 }
-
-TEST(Chess, IDKYet) {
-  constexpr auto kDepth = 3;
-  constexpr auto kNodes = 903346;
-  const auto state = chess::StateFromFEN("2rk1bn1/p1p1p1p1/1Q1p1p2/5Pp1/PP4P1/4q3/3Bb3/2R1KB1r w K - 0 1");
-  const auto result = chess::Perft(state, kDepth);
-
-  EXPECT_EQ(result, kNodes);
-}

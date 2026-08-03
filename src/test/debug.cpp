@@ -39,13 +39,13 @@ chess::State GenerateRandomState() {
 } // namespace
 
 TEST(Chess, DISABLED_Debug) {
-  constexpr auto kDepth = 3;
+  constexpr auto kDepth = 1;
   constexpr auto fen = std::string_view{"2rk1bn1/p1p1p1p1/1Q1p1p2/5Pp1/PP4P1/4q3/3Bb3/2R1KB1r w K - 0 1"};
 
   auto moves = std::vector<chess::Move>{};
-  //moves.push_back(MoveFromString("g2g4"));
-  //moves.push_back(MoveFromString("h4g3"));
-  //moves.push_back(MoveFromString("e2e4"));
+  moves.push_back(MoveFromString("b6e3"));
+  moves.push_back(MoveFromString("e2a6"));
+  //moves.push_back(MoveFromString("e1c1"));
 
   auto state = chess::StateFromFEN(fen.data());
   for (const auto& move : moves) {
@@ -76,8 +76,8 @@ TEST(Chess, DISABLED_Debug) {
 }
 
 TEST(Chess, DISABLED_CompareRandomPosition) {
-  constexpr auto kPositions = 10000;
-  constexpr auto kDepth = 3;
+  constexpr auto kPositions = 1000;
+  constexpr auto kDepth = 4;
   for (auto i = 0; i < kPositions; ++i) {
     printf("%d/%d\n", i + 1, kPositions);
     const auto state = GenerateRandomState();

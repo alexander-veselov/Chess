@@ -20,12 +20,12 @@ constexpr Bitboard KnightAttacks(Bitboard bitboard) {
 
 constexpr Bitboard KingAttacks(Bitboard bitboard) {
   return ((bitboard & kNotAFile) >> -SW) |
-         ((bitboard           ) >> -S ) |
+         ((bitboard            ) >> -S ) |
          ((bitboard & kNotHFile) >> -SE) |
          ((bitboard & kNotAFile) >> -W) |
          ((bitboard & kNotHFile) << +E ) |
          ((bitboard & kNotAFile) << +NW) |
-         ((bitboard           ) << +N ) |
+         ((bitboard            ) << +N ) |
          ((bitboard & kNotHFile) << +NE);
 }
 
