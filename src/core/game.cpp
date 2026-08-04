@@ -41,13 +41,16 @@ bool MoveOrCapture(Board& board, const Move& move, Color color) {
   return isPromotion;
 }
 
-Square EvaluateEnPassant(const Board& board, Square from, Square to) {
-  const auto piece = board[to];
-  if (piece == Piece::kBlackPawn || piece == Piece::kWhitePawn) {
-    const auto rankShift = GetRank(to) - GetRank(from);
-    if (std::abs(rankShift) == 2) {
-      return CreateSquare(GetFile(from), (Rank)(GetRank(from) + rankShift / 2));
-    }
+Square EvaluateEnPassant(const Board& board, Square from, Square to, Piece fromPiece) {
+  const auto diff = std::abs(to - from);
+  if (diff != 16) {
+    return Square::kInvalid;
+  }
+  switch (fromPiece) {
+  case Piece::kWhitePawn:
+    return static_cast<Square>(from + 8);
+  case Piece::kBlackPawn:
+    return static_cast<Square>(from - 8);
   }
   return Square::kInvalid;
 }
@@ -417,7 +420,7 @@ void MakeMove(State& state, const Move& move) {
   state.halfmoveClock = resetClock ? 0 : state.halfmoveClock + 1;
   state.fullmoveNumber += state.turn == Color::kBlack ? 1 : 0;
   state.turn = FlipColor(state.turn);
-  state.enPassant = EvaluateEnPassant(state.board, from, to);
+  state.enPassant = EvaluateEnPassant(state.board, from, to, fromPiece);
 
   const auto toPiece2 = state.board[to];
   auto& emptySquares = state.bitboards[Piece::kNone];
