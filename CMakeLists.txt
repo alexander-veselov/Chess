@@ -48,12 +48,12 @@ target_include_directories(Test PUBLIC ${TEST_INCLUDE_FOLDER})
 target_link_libraries(Test PRIVATE Core Engine GTest::gtest GTest::gtest_main)
 set_property(TARGET Test PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
-# Debug executable
-set(DEBUG_SOURCE_FOLDER "src/debug")
-file(GLOB DEBUG_SOURCES ${DEBUG_SOURCE_FOLDER}/*.cpp)
-add_executable(Debug ${DEBUG_SOURCES})
-target_link_libraries(Debug PRIVATE Core)
-set_property(TARGET Debug PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+# Experiments executable
+set(EXPERIMENTS_SOURCE_FOLDER "src/experiments")
+file(GLOB EXPERIMENTS_SOURCES ${EXPERIMENTS_SOURCE_FOLDER}/*.cpp)
+add_executable(Experiments ${EXPERIMENTS_SOURCES})
+target_link_libraries(Experiments PRIVATE Core)
+set_property(TARGET Experiments PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
 # Benchmark executable
 set(BENCHMARK_INCLUDE_FOLDER "include/benchmark")
