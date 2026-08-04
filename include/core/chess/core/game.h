@@ -10,7 +10,7 @@ namespace chess {
 
 Status GetStatus(const State& state);
 void GetLegalMoves(const State& state, Moves& legalMoves);
-void MakeMove(State& state, const Move& move);
+void MakeMove(State& state, Move move);
 
 class Game {
 public:
@@ -21,7 +21,7 @@ public:
   const Status GetStatus() const;
   bool CanMove(Square square) const;
   bool IsInCheck() const;
-  bool MakeMove(const Move& move);
+  bool MakeMove(Move move);
   Moves GetLegalMoves(Square square) const;
 
 private:

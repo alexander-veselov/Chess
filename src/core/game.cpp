@@ -27,7 +27,7 @@ BasePiece PromotionTypeToBasePiece(MoveType type) {
   return BasePiece::kNone;
 }
 
-bool MoveOrCapture(Board& board, const Move& move, Color color) {
+bool MoveOrCapture(Board& board, Move move, Color color) {
   const auto from = GetFrom(move);
   const auto to = GetTo(move);
   const auto moveType = GetType(move);
@@ -264,7 +264,7 @@ bool CanMoveInTurn(const State& state, Square square) {
   return GetPieceColor(state.board[square]) == state.turn;
 }
 
-void UpdateCastlingState(State& state, const Move& move) {
+void UpdateCastlingState(State& state, Move move) {
   const auto from = GetFrom(move);
   const auto to = GetTo(move);
   const auto fromBasePiece = GetBasePiece(state.board[from]);
@@ -320,7 +320,7 @@ bool HasAvailableMoves(const State& state) {
   return !legalMoves.empty();
 }
 
-bool LegalMove(State& state, const Move& move) {
+bool LegalMove(State& state, Move move) {
   if (GetFrom(move) == GetTo(move) || !CanMoveInTurn(state, GetFrom(move))) {
     return false;
   }
@@ -371,7 +371,7 @@ void GetLegalMoves(const State& state, Moves& legalMoves) {
   }
 }
 
-void MakeMove(State& state, const Move& move) {
+void MakeMove(State& state, Move move) {
   const auto from = GetFrom(move);
   const auto to = GetTo(move);
   const auto fromPiece = state.board[from];
@@ -458,7 +458,7 @@ bool Game::IsInCheck() const {
   return chess::IsInCheck(state_, state_.turn);
 }
 
-bool Game::MakeMove(const Move& move) {
+bool Game::MakeMove(Move move) {
   return chess::LegalMove(state_, move);
 }
 
