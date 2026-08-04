@@ -3,12 +3,13 @@
 #include "chess/core/bitboard.h"
 #include "chess/core/bits.h"
 #include "chess/core/direction.h"
+#include "chess/core/lookup_tables.h"
 #include "chess/core/magic_bitboards.h"
 #include "chess/core/square.h"
 
 namespace chess {
 
-constexpr Bitboard KnightAttacks(Bitboard bitboard) {
+constexpr Bitboard MultipleKnightAttacks(Bitboard bitboard) {
   return ((bitboard & kNotABFile) << (+NW + W)) |
          ((bitboard & kNotAFile ) << (+NW + N)) |
          ((bitboard & kNotHFile ) << (+NE + N)) |
@@ -19,7 +20,7 @@ constexpr Bitboard KnightAttacks(Bitboard bitboard) {
          ((bitboard & kNotABFile) >> (-SW - W));
 }
 
-constexpr Bitboard KingAttacks(Bitboard bitboard) {
+constexpr Bitboard MultipleKingAttacks(Bitboard bitboard) {
   return ((bitboard & kNotAFile) >> -SW) |
          ((bitboard            ) >> -S ) |
          ((bitboard & kNotHFile) >> -SE) |
@@ -98,31 +99,24 @@ constexpr Bitboard SingleQueenAttacks(Square square, Bitboard occupancy) {
          SingleRookAttacks(square, occupancy);
 }
 
-constexpr Bitboard BishopAttacks(Bitboard bitboard, Bitboard occupancy) {
-  auto attacks = kEmptyBoard;
-  while (bitboard) {
-    const auto from = PopLSB(bitboard);
-    attacks |= MagicBishopAttacks(from, occupancy);
-  }
-  return attacks;
+constexpr Bitboard KnightAttacks(Square square) {
+  return kKnightAttacks[square];
 }
 
-constexpr Bitboard RookAttacks(Bitboard bitboard, Bitboard occupancy) {
-  auto attacks = kEmptyBoard;
-  while (bitboard) {
-    const auto from = PopLSB(bitboard);
-    attacks |= MagicRookAttacks(from, occupancy);
-  }
-  return attacks;
+constexpr Bitboard KingAttacks(Square square) {
+  return kKingAttacks[square];
 }
 
-constexpr Bitboard QueenAttacks(Bitboard bitboard, Bitboard occupancy) {
-  auto attacks = kEmptyBoard;
-  while (bitboard) {
-    const auto from = PopLSB(bitboard);
-    attacks |= MagicQueenAttacks(from, occupancy);
-  }
-  return attacks;
+constexpr Bitboard BishopAttacks(Square square, Bitboard occupancy) {
+  return MagicBishopAttacks(square, occupancy);
+}
+
+constexpr Bitboard RookAttacks(Square square, Bitboard occupancy) {
+  return MagicRookAttacks(square, occupancy);
+}
+
+constexpr Bitboard QueenAttacks(Square square, Bitboard occupancy) {
+  return MagicQueenAttacks(square, occupancy);
 }
 
 } // namespace chess
