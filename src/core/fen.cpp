@@ -1,6 +1,7 @@
 #include "chess/core/fen.h"
 
 #include "chess/core/color.h"
+#include "chess/core/game.h"
 #include "chess/core/piece.h"
 #include "chess/core/square.h"
 
@@ -15,6 +16,21 @@ Square IndexToSquare(size_t index) {
   return CreateSquare(
       static_cast<File>(kBoardSize - (kBoardSize * kBoardSize - index - 1) % kBoardSize - 1),
       static_cast<Rank>((kBoardSize * kBoardSize - index - 1) / kBoardSize));
+}
+
+bool HasEnPassantCapture(const State& state) {
+  // TODO: optimize
+  if (state.enPassant == Square::kInvalid) {
+    return false;
+  }
+  auto legalMoves = Moves{};
+  GetLegalMoves(state, legalMoves);
+  for (const auto move : legalMoves) {
+    if (GetType(move) == MoveType::kEnPassant) {
+      return true;
+    }
+  }
+  return false;
 }
 
 } // namespace
@@ -128,9 +144,8 @@ std::string StateToFEN(const State& state) {
   fen += CastlingRightsMaskToString(state.castlingRightsMask);
 
   fen += " ";
-  if (state.enPassant != Square::kInvalid) {
-    fen += FileToString(GetFile(state.enPassant));
-    fen += RankToString(GetRank(state.enPassant));
+  if (HasEnPassantCapture(state)) {
+    fen += SquareToString(state.enPassant);
   } else {
     fen += "-";
   }

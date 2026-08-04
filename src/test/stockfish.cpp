@@ -181,4 +181,16 @@ std::map<std::string, U64> Stockfish::Perft(U32 depth) {
   return result;
 }
 
+std::string Stockfish::FEN() const {
+  Send("d");
+
+  constexpr auto kFenMarker = std::string_view{"Fen: "};
+  const auto lines = ReadUntil(std::string{kFenMarker});
+  if (!lines.empty()) {
+    return lines.back().substr(kFenMarker.size());
+  }
+
+  return {};
+}
+
 } // namespace chess

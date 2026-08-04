@@ -8,11 +8,19 @@
 
 namespace {
 
+chess::Stockfish& Stockfish() {
+  static auto stockfish = chess::Stockfish("stockfish.exe");
+  return stockfish;
+}
+
 std::map<std::string, U64>
 StorckfishDivide(const std::string& fen, const std::vector<chess::Move>& moves, U32 depth) {
-  static auto stockfish = chess::Stockfish("stockfish.exe");
-  stockfish.Position(fen.data(), moves);
-  return stockfish.Perft(depth);
+  Stockfish().Position(fen.data(), moves);
+  return Stockfish().Perft(depth);
+}
+
+std::string StorckfishFEN() {
+  return Stockfish().FEN();
 }
 
 chess::Move MoveFromString(const std::string& string) {
@@ -21,8 +29,8 @@ chess::Move MoveFromString(const std::string& string) {
   return move;
 }
 
-chess::State GenerateRandomState() {
-  auto state = chess::StateFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+chess::State GenerateRandomState(const std::string& fen, std::vector<chess::Move>& moves) {
+  auto state = chess::StateFromFEN(fen);
   const auto moveCount = chess::RandomU32(0, 200);
   for (auto i = 0; i < moveCount; ++i) {
     auto legalMoves = chess::Moves{};
@@ -31,6 +39,7 @@ chess::State GenerateRandomState() {
       return state;
     }
     const auto move = legalMoves[chess::RandomU32(0, legalMoves.size() - 1)];
+    moves.push_back(move);
     chess::MakeMove(state, move);
   }
   return state;
@@ -78,12 +87,16 @@ TEST(Chess, DISABLED_Debug) {
 TEST(Chess, DISABLED_CompareRandomPosition) {
   constexpr auto kPositions = 1000;
   constexpr auto kDepth = 4;
+  constexpr auto kFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
   for (auto i = 0; i < kPositions; ++i) {
     printf("%d/%d\n", i + 1, kPositions);
-    const auto state = GenerateRandomState();
-    const auto fen = chess::StateToFEN(state);
+    auto moves = std::vector<chess::Move>{};
+    const auto state = GenerateRandomState(kFen, moves);
+    const auto localFen = chess::StateToFEN(state);
     const auto localPerft = chess::Divide(state, kDepth);
-    const auto stockfishPerft = StorckfishDivide(fen, {}, kDepth);
-    EXPECT_EQ(localPerft, stockfishPerft) << fen;
+    const auto stockfishPerft = StorckfishDivide(kFen, moves, kDepth);
+    const auto stockfishFen = StorckfishFEN();
+    EXPECT_EQ(localFen, stockfishFen);
+    EXPECT_EQ(localPerft, stockfishPerft) << localFen;
   }
 }

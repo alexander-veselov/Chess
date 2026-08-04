@@ -413,6 +413,9 @@ void MakeMove(State& state, const Move& move) {
       state.bitboards[kNone] ^= BBFromSquare(D8);
     }
   }
+  const auto resetClock = GetBasePiece(fromPiece) == BasePiece::kPawn || toPiece != Piece::kNone;
+  state.halfmoveClock = resetClock ? 0 : state.halfmoveClock + 1;
+  state.fullmoveNumber += state.turn == Color::kBlack ? 1 : 0;
   state.turn = FlipColor(state.turn);
   state.enPassant = EvaluateEnPassant(state.board, from, to);
 
