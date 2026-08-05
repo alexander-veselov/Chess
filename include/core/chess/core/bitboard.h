@@ -42,6 +42,7 @@ constexpr Bitboard FillRank(Rank rank) {
 constexpr Bitboard kEmptyBoard = 0ULL;
 constexpr Bitboard k2Rank = FillRank(_2);
 constexpr Bitboard k7Rank = FillRank(_7);
+constexpr Bitboard k18Rank = FillRank(_1) | FillRank(_8);
 constexpr Bitboard kNotAFile = ~FillFile(_A);
 constexpr Bitboard kNotHFile = ~FillFile(_H);
 constexpr Bitboard kNotABFile = ~(FillFile(_A) | FillFile(_B));

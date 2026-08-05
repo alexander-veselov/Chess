@@ -196,37 +196,34 @@ void GetKnightMoves(const State& state, Bitboard allyPieces, Bitboard knights, M
 }
 
 void GetPawnMoves(const State& state, Bitboard allyPieces, Bitboard pawns, Moves& moves) {
+  const auto enPassantBB =
+      state.enPassant == Square::kInvalid ? kEmptyBoard : BBFromSquare(state.enPassant);
+  const auto occupancy = ~state.bitboards[kNone];
+  const auto captures = ~allyPieces & occupancy | enPassantBB;
   while (pawns) {
     const auto from = PopLSB(pawns);
     const auto pawn = BBFromSquare(from);
     auto attacks = kEmptyBoard;
     if (state.turn == Color::kWhite) {
-      attacks |= WhitePawnSinglePushes(pawn, ~state.bitboards[kNone]);
-      attacks |= WhitePawnDoublePushes(pawn, ~state.bitboards[kNone]);
-      attacks |= WhitePawnAttacks(pawn) & ~(allyPieces | state.bitboards[kNone]);
+      attacks |= WhitePawnSinglePushes(pawn, occupancy);
+      attacks |= WhitePawnDoublePushes(pawn, occupancy);
+      attacks |= WhitePawnAttacks(pawn) & captures;
     } else {
-      attacks |= BlackPawnSinglePushes(pawn, ~state.bitboards[kNone]);
-      attacks |= BlackPawnDoublePushes(pawn, ~state.bitboards[kNone]);
-      attacks |= BlackPawnAttacks(pawn) & ~(allyPieces | state.bitboards[kNone]);
+      attacks |= BlackPawnSinglePushes(pawn, occupancy);
+      attacks |= BlackPawnDoublePushes(pawn, occupancy);
+      attacks |= BlackPawnAttacks(pawn) & captures;
     }
     while (attacks) {
       const auto to = PopLSB(attacks);
-      const auto toRank = GetRank(to);
-      if (toRank == Rank::_1 || toRank == Rank::_8) {
+      if (to == state.enPassant) {
+        moves.push_back(CreateMove(from, state.enPassant, MoveType::kEnPassant));
+      } else if (BBFromSquare(to) & k18Rank) {
         moves.push_back(CreateMove(from, to, MoveType::kBishopPromotion));
         moves.push_back(CreateMove(from, to, MoveType::kRookPromotion));
         moves.push_back(CreateMove(from, to, MoveType::kKnightPromotion));
         moves.push_back(CreateMove(from, to, MoveType::kQueenPromotion));
       } else {
         moves.push_back(CreateMove(from, to));
-      }
-    }
-    if (state.enPassant != Square::kInvalid) {
-      const auto fileShift = GetFile(state.enPassant) - GetFile(from);
-      const auto rankShift = GetRank(state.enPassant) - GetRank(from);
-      const auto direction = state.turn == Color::kWhite ? 1 : -1;
-      if (std::abs(fileShift) == 1 && rankShift == direction) {
-        moves.push_back(CreateMove(from, state.enPassant, MoveType::kEnPassant));
       }
     }
   }
