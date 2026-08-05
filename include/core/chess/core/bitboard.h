@@ -49,5 +49,9 @@ constexpr Bitboard kNotABFile = ~(FillFile(_A) | FillFile(_B));
 constexpr Bitboard kNotGHFile = ~(FillFile(_G) | FillFile(_H));
 constexpr Bitboard kEdges = FillFile(_A) | FillFile(_H) | FillRank(_1) | FillRank(_8);
 constexpr Bitboard kCorners = BBFromSquare(A1) | BBFromSquare(A8) | BBFromSquare(H1) | BBFromSquare(H8);
+constexpr Bitboard kF1G1 = BBFromSquare(F1) | BBFromSquare(G1);
+constexpr Bitboard kF8G8 = BBFromSquare(F8) | BBFromSquare(G8);
+constexpr Bitboard kB1C1D1 = BBFromSquare(B1) | BBFromSquare(C1) | BBFromSquare(D1);
+constexpr Bitboard kB8C8D8 = BBFromSquare(B8) | BBFromSquare(C8) | BBFromSquare(D8);
 
 } // namespace chess

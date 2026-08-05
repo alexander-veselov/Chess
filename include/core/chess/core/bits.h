@@ -37,4 +37,8 @@ constexpr U64 AssignBit(U64 value, U8 position, bool bit) {
   return bit ? SetBit(value, position) : ResetBit(value, position);
 }
 
+constexpr bool HasAllBits(U64 value, U64 bits) {
+  return (value & bits) == bits;
+}
+
 } // namespace chess
