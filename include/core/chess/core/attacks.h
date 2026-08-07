@@ -141,17 +141,15 @@ constexpr Bitboard QueenAttacks(Square square, Bitboard occupancy) {
 }
 
 constexpr Bitboard XRayBishopAttacks(Square square, Bitboard occupancy) {
-  return XRaySlidingAttacks(square, occupancy, NW) |
-         XRaySlidingAttacks(square, occupancy, NE) |
-         XRaySlidingAttacks(square, occupancy, SE) |
-         XRaySlidingAttacks(square, occupancy, SW);
+  const auto attacks = BishopAttacks(square, occupancy);
+  const auto blockers = attacks & occupancy;
+  return BishopAttacks(square, occupancy ^ blockers);
 }
 
 constexpr Bitboard XRayRookAttacks(Square square, Bitboard occupancy) {
-  return XRaySlidingAttacks(square, occupancy, N) |
-         XRaySlidingAttacks(square, occupancy, E) |
-         XRaySlidingAttacks(square, occupancy, S) |
-         XRaySlidingAttacks(square, occupancy, W);
+  const auto attacks = RookAttacks(square, occupancy);
+  const auto blockers = attacks & occupancy;
+  return RookAttacks(square, occupancy ^ blockers);
 }
 
 } // namespace chess
