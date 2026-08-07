@@ -286,6 +286,13 @@ bool LegalMove(State& state, Move move) {
   return false;
 }
 
+bool IsPotentiallyPinned(Bitboard bishopAttacks, Bitboard rookAttacks, bool hasDiagonalPin,
+                         bool hasOrthogonalPin, Square square) {
+  const auto bitboard = BBFromSquare(square);
+  return hasDiagonalPin && (bishopAttacks & bitboard) ||
+         hasOrthogonalPin && (rookAttacks & bitboard);
+}
+
 } // namespace
 
 Status GetStatus(const State& state) {
@@ -313,10 +320,31 @@ void GetLegalMoves(const State& state, Moves& legalMoves) {
   GetBishopMoves(state, allyPieces, state.bitboards[MakePiece(state.turn, BasePiece::kBishop)], moves);
   GetKnightMoves(state, allyPieces, state.bitboards[MakePiece(state.turn, BasePiece::kKnight)], moves);
   GetKingMoves  (state, allyPieces, state.bitboards[MakePiece(state.turn, BasePiece::kKing  )], moves);
+
+  const auto occupancy = ~state.bitboards[kNone];
+  const auto kingSquare = LSB(state.bitboards[MakePiece(state.turn, BasePiece::kKing)]);
+  const auto bishopAttacks = XRayBishopAttacks(kingSquare, occupancy);
+  const auto rookAttacks = XRayRookAttacks(kingSquare, occupancy);
+  const auto enemyColor = FlipColor(state.turn);
+  const auto bishopAttackers = state.bitboards[MakePiece(enemyColor, BasePiece::kBishop)] |
+                               state.bitboards[MakePiece(enemyColor, BasePiece::kQueen)];
+  const auto rookAttackers = state.bitboards[MakePiece(enemyColor, BasePiece::kRook)] |
+                             state.bitboards[MakePiece(enemyColor, BasePiece::kQueen)];
+  const auto hasDiagonalPin = bishopAttacks & bishopAttackers;
+  const auto hasOrthogonalPin = rookAttacks & rookAttackers;
+
+  const auto isInCheck = IsInCheck(state, state.turn);
   for (const auto move : moves) {
-    auto newState = State{state};
-    MakeMove(newState, move);
-    if (!IsInCheck(newState, state.turn)) {
+    const auto from = GetFrom(move);
+    if (isInCheck || GetBasePiece(state.board[from]) == BasePiece::kKing ||
+        GetType(move) == MoveType::kEnPassant ||
+        IsPotentiallyPinned(bishopAttacks, rookAttacks, hasDiagonalPin, hasOrthogonalPin, from)) {
+      auto newState = State{state};
+      MakeMove(newState, move);
+      if (!IsInCheck(newState, state.turn)) {
+        legalMoves.push_back(move);
+      }
+    } else {
       legalMoves.push_back(move);
     }
   }

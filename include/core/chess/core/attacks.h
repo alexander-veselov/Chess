@@ -80,6 +80,27 @@ constexpr Bitboard SlidingAttacks(Square square, Bitboard occupancy, Direction d
   return attacks;
 }
 
+constexpr Bitboard XRaySlidingAttacks(Square square, Bitboard occupancy,
+                                      Direction direction) {
+  auto attacks = kEmptyBoard;
+  auto crossed = false;
+
+  auto shifted = square;
+  auto attack = kEmptyBoard;
+  while (attack = ShiftSquare(shifted, direction)) {
+    shifted = Square(shifted + direction);
+    attacks |= attack;
+    if (attack & occupancy) {
+      if (crossed) {
+        break;
+      }
+      crossed = true;
+    }
+  }
+
+  return attacks;
+}
+
 constexpr Bitboard SingleBishopAttacks(Square square, Bitboard occupancy) {
   return SlidingAttacks(square, occupancy, NW) |
          SlidingAttacks(square, occupancy, NE) |
@@ -117,6 +138,20 @@ constexpr Bitboard RookAttacks(Square square, Bitboard occupancy) {
 
 constexpr Bitboard QueenAttacks(Square square, Bitboard occupancy) {
   return MagicQueenAttacks(square, occupancy);
+}
+
+constexpr Bitboard XRayBishopAttacks(Square square, Bitboard occupancy) {
+  return XRaySlidingAttacks(square, occupancy, NW) |
+         XRaySlidingAttacks(square, occupancy, NE) |
+         XRaySlidingAttacks(square, occupancy, SE) |
+         XRaySlidingAttacks(square, occupancy, SW);
+}
+
+constexpr Bitboard XRayRookAttacks(Square square, Bitboard occupancy) {
+  return XRaySlidingAttacks(square, occupancy, N) |
+         XRaySlidingAttacks(square, occupancy, E) |
+         XRaySlidingAttacks(square, occupancy, S) |
+         XRaySlidingAttacks(square, occupancy, W);
 }
 
 } // namespace chess
