@@ -4,11 +4,19 @@
 #include "chess/core/types.h"
 
 #include <bit>
+#include <cassert>
 
 namespace chess {
 
 constexpr Square LSB(U64 value) {
+  assert(value != 0ULL);
+#ifdef _MSC_VER
+  unsigned long index;
+  _BitScanForward64(&index, value);
+  return static_cast<Square>(index);
+#else
   return static_cast<Square>(std::countr_zero(value));
+#endif
 }
 
 constexpr Square PopLSB(U64& value) {
