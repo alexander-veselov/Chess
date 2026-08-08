@@ -1,32 +1,24 @@
 #pragma once
 
-#include "layer.h"
+#include "chess/application/layer.h"
+#include "chess/application/window.h"
 
 #include <memory>
-#include <string>
 #include <vector>
-
-struct GLFWwindow;
 
 namespace chess {
 
 class Application {
 public:
-  struct Specification {
-    std::string name;
-    uint32_t width;
-    uint32_t height;
-  };
-
-  Application(const Specification& specification);
+  Application();
   ~Application();
-  void Run();
 
+  bool Initialize();
+  void Run();
   void PushLayer(const std::shared_ptr<Layer>& layer);
 
 private:
-  Specification specification_;
-  GLFWwindow* window_handle_;
+  std::unique_ptr<Window> window_;
   std::vector<std::shared_ptr<Layer>> layer_stack_;
 };
 

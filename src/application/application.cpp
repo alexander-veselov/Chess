@@ -3,97 +3,51 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include <stdio.h>
-#define GL_SILENCE_DEPRECATION
-#if defined(IMGUI_IMPL_OPENGL_ES2)
-#include <GLES2/gl2.h>
-#endif
-#include <GLFW/glfw3.h> // Will drag system OpenGL headers
+#include <GLFW/glfw3.h>
 
-// [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to
-// maximize ease of testing and compatibility with old VS compilers. To link
-// with VS2010-era libraries, VS2015+ requires linking with
-// legacy_stdio_definitions.lib, which we do using this pragma. Your own project
-// should not be affected, as you are likely to link with a newer binary of GLFW
-// that is adequate for your version of Visual Studio.
-#if defined(_MSC_VER) && (_MSC_VER >= 1900) &&                                 \
-    !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
-#pragma comment(lib, "legacy_stdio_definitions")
-#endif
-
-static void glfw_error_callback(int error, const char* description) {
+static void GlfwErrorCallback(int error, const char* description) {
   fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
 namespace chess {
+namespace {
+constexpr auto kBackgroundColor = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+}
 
-Application::Application(const Specification& specification)
-    : specification_{specification}, window_handle_{nullptr}, layer_stack_{} {
-  glfwSetErrorCallback(glfw_error_callback);
+Application::Application()
+  : window_{nullptr},
+    layer_stack_{} {
+}
+
+bool Application::Initialize() {
+  glfwSetErrorCallback(GlfwErrorCallback);
   if (!glfwInit()) {
     printf("GLFW: Init failed\n");
-    return;
+    return false;
   }
 
-  // Decide GL+GLSL versions
-#if defined(IMGUI_IMPL_OPENGL_ES2)
-  // GL ES 2.0 + GLSL 100 (WebGL 1.0)
-  const char* glsl_version = "#version 100";
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
-#elif defined(IMGUI_IMPL_OPENGL_ES3)
-  // GL ES 3.0 + GLSL 300 es (WebGL 2.0)
-  const char* glsl_version = "#version 300 es";
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
-#elif defined(__APPLE__)
-  // GL 3.2 + GLSL 150
-  const char* glsl_version = "#version 150";
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // 3.2+ only
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Required on Mac
-#else
-  // GL 3.0 + GLSL 130
-  const char* glsl_version = "#version 130";
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-  // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+
-  // only glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // 3.0+ only
-#endif
+  auto windowSpecification = Window::Specification{};
+  windowSpecification.name = "Chess";
+  windowSpecification.width = 8 * 200; // TODO: fix
+  windowSpecification.height = 8 * 200 + 44;
 
-  window_handle_ =
-      glfwCreateWindow((int)(specification_.width),
-                       (int)(specification_.height),
-                       specification_.name.c_str(), nullptr, nullptr);
-  if (window_handle_ == nullptr) {
-    printf("GLFW: CreateWindow failed\n");
-    return;
+  window_ = std::make_unique<Window>(windowSpecification);
+  if (!window_->Create()) {
+    return false;
   }
-  glfwMakeContextCurrent(window_handle_);
-  glfwSwapInterval(1); // Enable vsync
 
-  // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
-  ImGuiIO& io = ImGui::GetIO();
-  (void)io;
-  io.ConfigFlags |=
-      ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-  io.ConfigFlags |=
-      ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
-
+  auto& io = ImGui::GetIO();
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
   io.IniFilename = nullptr;
 
-  // Setup Dear ImGui style
   ImGui::StyleColorsDark();
-  // ImGui::StyleColorsLight();
 
-  // Setup Platform/Renderer backends
-  ImGui_ImplGlfw_InitForOpenGL(window_handle_, true);
-  ImGui_ImplOpenGL3_Init(glsl_version);
+  ImGui_ImplGlfw_InitForOpenGL(window_->GetHandle(), true);
+  ImGui_ImplOpenGL3_Init(Window::GetGLSLVersion().data());
+
+  return true;
 }
 
 Application::~Application() {
@@ -101,30 +55,18 @@ Application::~Application() {
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();
 
-  glfwDestroyWindow(window_handle_);
+  window_->Destroy();
   glfwTerminate();
 }
 
 void Application::Run() {
-  ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-  while (!glfwWindowShouldClose(window_handle_)) {
-    // Poll and handle events (inputs, window_handle_ resize, etc.)
-    // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to
-    // tell if dear imgui wants to use your inputs.
-    // - When io.WantCaptureMouse is true, do not dispatch mouse input data to
-    // your main application, or clear/overwrite your copy of the mouse data.
-    // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input
-    // data to your main application, or clear/overwrite your copy of the
-    // keyboard data. Generally you may always pass all inputs to dear imgui,
-    // and hide them from your application based on those two flags.
+  while (!window_->ShouldClose()) {
     glfwPollEvents();
-    if (glfwGetWindowAttrib(window_handle_, GLFW_ICONIFIED) != 0) {
+    if (window_->IsMinimized()) {
       ImGui_ImplGlfw_Sleep(10);
       continue;
     }
 
-    // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -133,17 +75,15 @@ void Application::Run() {
       layer->OnUIRender();
     }
 
-    // Rendering
     ImGui::Render();
-    int display_w, display_h;
-    glfwGetFramebufferSize(window_handle_, &display_w, &display_h);
-    glViewport(0, 0, display_w, display_h);
-    glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w,
-                 clear_color.z * clear_color.w, clear_color.w);
+    const auto framebufferSize = window_->GetFramebufferSize();
+    glViewport(0, 0, framebufferSize.first, framebufferSize.second);
+    glClearColor(kBackgroundColor.x * kBackgroundColor.w, kBackgroundColor.y * kBackgroundColor.w,
+                 kBackgroundColor.z * kBackgroundColor.w, kBackgroundColor.w);
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    glfwSwapBuffers(window_handle_);
+    window_->SwapBuffers();
   }
 }
 
