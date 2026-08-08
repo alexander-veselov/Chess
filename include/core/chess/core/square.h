@@ -1,5 +1,6 @@
 #pragma once
 
+#include "chess/core/color.h"
 #include "chess/core/constants.h"
 #include "chess/core/types.h"
 
@@ -37,6 +38,10 @@ constexpr File GetFile(Square square) {
 
 constexpr Rank GetRank(Square square) {
   return static_cast<Rank>(square >> 3);
+}
+
+constexpr Color GetColor(Square square) {
+  return (((square / 8) ^ square) & 1) != 0 ? Color::kWhite : Color::kBlack;
 }
 
 std::string FileToString(File file);

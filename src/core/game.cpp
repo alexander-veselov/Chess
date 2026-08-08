@@ -253,18 +253,6 @@ void UpdateCastlingState(State& state,
   }
 }
 
-bool CanMove(const State& state, Square square) {
-  // TODO: improve that function
-  auto legalMoves = Moves{};
-  GetLegalMoves(state, legalMoves);
-  for (const auto move : legalMoves) {
-    if (GetFrom(move) == square) {
-      return true;
-    }
-  }
-  return false;
-}
-
 bool HasAvailableMoves(const State& state) {
   auto legalMoves = Moves{};
   GetLegalMoves(state, legalMoves);
@@ -443,10 +431,6 @@ const State& Game::GetState() const {
 
 const Status Game::GetStatus() const {
   return chess::GetStatus(state_);
-}
-
-bool Game::CanMove(Square square) const {
-  return chess::CanMove(state_, square);
 }
 
 bool Game::IsInCheck() const {

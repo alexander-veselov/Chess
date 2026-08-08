@@ -19,7 +19,6 @@ public:
 
   const State& GetState() const;
   const Status GetStatus() const;
-  bool CanMove(Square square) const;
   bool IsInCheck() const;
   bool MakeMove(Move move);
   Moves GetLegalMoves(Square square) const;
