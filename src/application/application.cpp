@@ -1,8 +1,11 @@
 #include "chess/application/application.h"
 
+#include "chess/application/ui_constants.h"
+
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+
 #include <GLFW/glfw3.h>
 
 static void GlfwErrorCallback(int error, const char* description) {
@@ -28,8 +31,8 @@ bool Application::Initialize() {
 
   auto windowSpecification = Window::Specification{};
   windowSpecification.name = "Chess";
-  windowSpecification.width = 8 * 200; // TODO: fix
-  windowSpecification.height = 8 * 200 + 44;
+  windowSpecification.width = kWindowWidth;
+  windowSpecification.height = kWindowHeight;
 
   window_ = std::make_unique<Window>(windowSpecification);
   if (!window_->Create()) {
@@ -38,9 +41,15 @@ bool Application::Initialize() {
 
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
+
+  const auto contentScale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
+  ImGui::GetStyle().ScaleAllSizes(contentScale);
+  ImGui::GetStyle().FontScaleDpi = contentScale;
+
   auto& io = ImGui::GetIO();
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
   io.IniFilename = nullptr;
+  io.FontDefault = io.Fonts->AddFontDefaultVector();
 
   ImGui::StyleColorsDark();
 

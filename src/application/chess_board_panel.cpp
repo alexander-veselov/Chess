@@ -2,6 +2,7 @@
 
 #include "chess/application/chess.h"
 #include "chess/application/texture.h"
+#include "chess/application/ui_constants.h"
 #include "chess/core/move.h"
 #include "chess/core/piece.h"
 #include "chess/core/square.h"
@@ -13,10 +14,6 @@
 
 namespace chess {
 namespace {
-
-// TODO: make configurable, remove global variables
-constexpr auto kPerspectiveColor = Color::kWhite;
-constexpr auto kCellSize = 200.0f;
 
 constexpr auto kCheckCircleColor = IM_COL32(128, 0, 0, 64);
 constexpr auto kDarkSquareColor = IM_COL32(118, 150, 86, 255);
@@ -219,7 +216,7 @@ void ChessBoardPanel::OnSquareClickedEvent(Chess& chess, Square clickedSquare) {
 }
 
 void ChessBoardPanel::OnUIRender(Chess& chess) {
-  ImGui::Begin("Chess");
+  ImGui::BeginChild("ChessBoardPanel", ImVec2(kCellSize * kBoardSize, kCellSize * kBoardSize));
 
   const auto origin = ImGui::GetCursorScreenPos();
   if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
@@ -244,7 +241,7 @@ void ChessBoardPanel::OnUIRender(Chess& chess) {
   }
   DrawPieces(drawList, origin, drawData_.board);
 
-  ImGui::End();
+  ImGui::EndChild();
 }
 
 } // namespace chess
