@@ -3,15 +3,10 @@
 #include "chess/core/attacks.h"
 #include "chess/core/castling_rights.h"
 #include "chess/core/color.h"
-#include "chess/core/fen.h"
 
 namespace chess {
 
 namespace {
-
-State CreateDefaultState() {
-  return chess::StateFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-}
 
 Square EvaluateEnPassant(Square from, Square to, Piece fromPiece) {
   const auto diff = std::abs(to - from);
@@ -90,15 +85,6 @@ bool IsAttacked(const State& state, Color turn, Square square) {
     return false;
   }
 
-  return false;
-}
-
-bool IsInCheck(const State& state, Color turn) {
-  if (turn == Color::kWhite) {
-    return IsAttacked(state, turn, LSB(state.bitboards[kWhiteKing]));
-  } else if (turn == Color::kBlack) {
-    return IsAttacked(state, turn, LSB(state.bitboards[kBlackKing]));
-  }
   return false;
 }
 
@@ -213,10 +199,6 @@ void GetPawnMoves(const State& state, Bitboard allyPieces, Bitboard pawns, Moves
   }
 }
 
-bool CanMoveInTurn(const State& state, Square square) {
-  return GetPieceColor(state.board[square]) == state.turn;
-}
-
 void UpdateCastlingState(State& state,
                          Square from, Square to,
                          BasePiece fromBasePiece, BasePiece toBasePiece) {
@@ -259,21 +241,6 @@ bool HasAvailableMoves(const State& state) {
   return !legalMoves.empty();
 }
 
-bool LegalMove(State& state, Move move) {
-  if (GetFrom(move) == GetTo(move) || !CanMoveInTurn(state, GetFrom(move))) {
-    return false;
-  }
-  auto legalMoves = Moves{};
-  GetLegalMoves(state, legalMoves);
-  for (const auto legalMove : legalMoves) {
-    if (legalMove == move) {
-      MakeMove(state, legalMove);
-      return true;
-    }
-  }
-  return false;
-}
-
 bool IsPotentiallyPinned(Bitboard bishopAttacks, Bitboard rookAttacks, bool hasDiagonalPin,
                          bool hasOrthogonalPin, Square square) {
   const auto bitboard = BBFromSquare(square);
@@ -297,6 +264,15 @@ Status GetStatus(const State& state) {
   // TODO: implement draw by repetition/insufficient material/etc
 
   return state.turn == Color::kWhite ? Status::kWhiteToMove : Status::kBlackToMove;
+}
+
+bool IsInCheck(const State& state, Color turn) {
+  if (turn == Color::kWhite) {
+    return IsAttacked(state, turn, LSB(state.bitboards[kWhiteKing]));
+  } else if (turn == Color::kBlack) {
+    return IsAttacked(state, turn, LSB(state.bitboards[kBlackKing]));
+  }
+  return false;
 }
 
 void GetLegalMoves(const State& state, Moves& legalMoves) {
@@ -415,43 +391,6 @@ void MakeMove(State& state, Move move) {
   state.halfmoveClock = resetClock ? 0 : state.halfmoveClock + 1;
   state.fullmoveNumber += state.turn == Color::kBlack ? 1 : 0;
   state.turn = FlipColor(state.turn);
-}
-
-Game::Game()
-  : state_{CreateDefaultState()} {
-}
-
-Game::Game(const State& state)
-  : state_{state} {
-}
-
-const State& Game::GetState() const {
-  return state_;
-}
-
-const Status Game::GetStatus() const {
-  return chess::GetStatus(state_);
-}
-
-bool Game::IsInCheck() const {
-  return chess::IsInCheck(state_, state_.turn);
-}
-
-bool Game::MakeMove(Move move) {
-  return chess::LegalMove(state_, move);
-}
-
-Moves Game::GetLegalMoves(Square square) const {
-  // TODO: improve that function
-  auto movesForSquare = Moves{};
-  auto legalMoves = Moves{};
-  chess::GetLegalMoves(state_, legalMoves);
-  for (const auto move : legalMoves) {
-    if (GetFrom(move) == square) {
-      movesForSquare.push_back(move);
-    }
-  }
-  return movesForSquare;
 }
 
 } // namespace chess

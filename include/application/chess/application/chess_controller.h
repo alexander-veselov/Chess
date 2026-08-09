@@ -4,12 +4,12 @@
 
 namespace chess {
 
-class Game;
+class Chess;
 
 class ChessController {
 public:
   ChessController();
-  void SquareClickedEvent(Game& game, Square square);
+  void SquareClickedEvent(Chess& game, Square square);
   Square GetHighlightedSquare() const;
 
 private:

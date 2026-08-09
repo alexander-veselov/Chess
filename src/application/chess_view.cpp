@@ -1,8 +1,8 @@
 #include "chess/application/chess_view.h"
 
+#include "chess/application/chess.h"
 #include "chess/application/texture.h"
 #include "chess/core/constants.h"
-#include "chess/core/game.h"
 #include "chess/core/square.h"
 
 #include <utility>
@@ -129,7 +129,7 @@ void DrawMoves(ImDrawList* drawList, const ImVec2& origin, const Board& board, c
   }
 }
 
-void DrawBoard(ImDrawList* drawList, const Game& game, const ImVec2& origin,
+void DrawBoard(ImDrawList* drawList, const Chess& game, const ImVec2& origin,
                Square highlightedSquare) {
   const auto& state = game.GetState();
   const auto& board = state.board;
@@ -156,7 +156,7 @@ Square ChessView::ScreenToSquare(const ImVec2& mouse) {
   return CreateSquare(AdjustFile(file), AdjustRank(rank));
 }
 
-void ChessView::Draw(const Game& game, Square highlightedSquare) {
+void ChessView::Draw(const Chess& game, Square highlightedSquare) {
   const auto drawList = ImGui::GetWindowDrawList();
   const auto origin = ImGui::GetCursorScreenPos();
   DrawBoard(drawList, game, origin, highlightedSquare);

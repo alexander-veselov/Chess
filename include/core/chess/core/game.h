@@ -9,22 +9,8 @@
 namespace chess {
 
 Status GetStatus(const State& state);
+bool IsInCheck(const State& state, Color turn);
 void GetLegalMoves(const State& state, Moves& legalMoves);
 void MakeMove(State& state, Move move);
-
-class Game {
-public:
-  Game();
-  Game(const State& state);
-
-  const State& GetState() const;
-  const Status GetStatus() const;
-  bool IsInCheck() const;
-  bool MakeMove(Move move);
-  Moves GetLegalMoves(Square square) const;
-
-private:
-  State state_;
-};
 
 } // namespace chess

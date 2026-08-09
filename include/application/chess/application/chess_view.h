@@ -7,11 +7,11 @@ class ImVec2;
 
 namespace chess {
 
-class Game;
+class Chess;
 
 class ChessView {
 public:
-  void Draw(const Game& game, Square highlightedSquare);
+  void Draw(const Chess& game, Square highlightedSquare);
   Square ScreenToSquare(const ImVec2& mouse);
 };
 

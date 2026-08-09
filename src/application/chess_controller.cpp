@@ -1,8 +1,8 @@
 #include "chess/application/chess_controller.h"
 
+#include "chess/application/chess.h"
 #include "chess/core/board.h"
 #include "chess/core/color.h"
-#include "chess/core/game.h"
 #include "chess/core/move.h"
 #include "chess/core/square.h"
 
@@ -45,7 +45,7 @@ Square ChessController::GetHighlightedSquare() const {
   return highlightedSquare_;
 }
 
-void ChessController::SquareClickedEvent(Game& game, Square clickedSquare) {
+void ChessController::SquareClickedEvent(Chess& game, Square clickedSquare) {
   if (clickedSquare == Square::kInvalid) {
     return;
   }
