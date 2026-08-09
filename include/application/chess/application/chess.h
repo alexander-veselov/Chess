@@ -21,9 +21,11 @@ public:
   bool IsInCheck() const;
   bool MakeMove(Move move);
   Moves GetLegalMoves(Square square) const;
+  Moves GetHistory() const;
 
 private:
   State state_;
+  Moves history_;
 };
 
 } // namespace chess

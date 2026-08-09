@@ -6,6 +6,21 @@
 #include <imgui.h>
 
 namespace chess {
+namespace {
+
+std::string MovesToString(const Moves& moves) {
+  if (moves.empty()) {
+    return {};
+  }
+  auto result = std::string{};
+  for (const auto move : moves) {
+    result += MoveToString(move) + " ";
+  }
+  result.pop_back();
+  return result;
+}
+
+} // namespace
 
 void ChessInformationPanel::OnUIRender(Chess& chess) {
   ImGui::BeginChild("ChessInformationPanel");
@@ -13,12 +28,16 @@ void ChessInformationPanel::OnUIRender(Chess& chess) {
   const auto status = chess.GetStatus();
   ImGui::Text("%s", StatusToString(status).data());
 
-  const auto fen = StateToFEN(chess.GetState());
-  std::ranges::copy(fen, fenTextInputData_.begin());
-  fenTextInputData_[fen.size()] = '\0';
+  fen_ = StateToFEN(chess.GetState());
   ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-  ImGui::InputText("##fen", fenTextInputData_.data(), fenTextInputData_.size(),
+  ImGui::InputText("##fen", fen_.data(), fen_.capacity(),
                    ImGuiInputTextFlags_::ImGuiInputTextFlags_ReadOnly);
+
+  history_ = MovesToString(chess.GetHistory());
+  const auto historySize = ImVec2{ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.f};
+  ImGui::InputTextMultiline("##history", history_.data(), history_.capacity(), historySize,
+                            ImGuiInputTextFlags_::ImGuiInputTextFlags_ReadOnly |
+                            ImGuiInputTextFlags_::ImGuiInputTextFlags_WordWrap);
 
   ImGui::EndChild();
 }

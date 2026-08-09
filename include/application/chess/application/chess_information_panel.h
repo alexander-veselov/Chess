@@ -1,6 +1,6 @@
 #pragma once
 
-#include <array>
+#include <string>
 
 namespace chess {
 
@@ -11,7 +11,8 @@ public:
   void OnUIRender(Chess& chess);
 
 private:
-  std::array<char, 100> fenTextInputData_;
+  std::string fen_;
+  std::string history_;
 };
 
 }; // namespace chess

@@ -52,7 +52,11 @@ bool Chess::IsInCheck() const {
 }
 
 bool Chess::MakeMove(Move move) {
-  return chess::LegalMove(state_, move);
+  const auto isLegal = chess::LegalMove(state_, move);
+  if (isLegal) {
+    history_.push_back(move);
+  }
+  return isLegal;
 }
 
 Moves Chess::GetLegalMoves(Square square) const {
@@ -66,6 +70,10 @@ Moves Chess::GetLegalMoves(Square square) const {
     }
   }
   return movesForSquare;
+}
+
+Moves Chess::GetHistory() const {
+  return history_;
 }
 
 } // namespace chess
