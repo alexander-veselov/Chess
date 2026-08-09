@@ -1,8 +1,9 @@
-#include "chess/application/chess_view.h"
+#include "chess/application/chess_board_panel.h"
 
 #include "chess/application/chess.h"
 #include "chess/application/texture.h"
-#include "chess/core/constants.h"
+#include "chess/core/move.h"
+#include "chess/core/piece.h"
 #include "chess/core/square.h"
 
 #include <utility>
@@ -60,6 +61,18 @@ Rank AdjustRank(Rank rank) {
 
 File AdjustFile(File file) {
   return kPerspectiveColor == Color::kBlack ? static_cast<File>(kBoardSize - file - 1) : file;
+}
+
+Square ScreenToSquare(const ImVec2& origin, const ImVec2& mouse) {
+  const auto fileIndex = std::floor((mouse.x - origin.x) / kCellSize);
+  const auto rankIndex = std::floor((mouse.y - origin.y) / kCellSize);
+  if (fileIndex < File::_A || fileIndex > File::_H ||
+      rankIndex < Rank::_1 || rankIndex > Rank::_8) {
+    return Square::kInvalid;
+  }
+  const auto file = static_cast<File>(fileIndex);
+  const auto rank = static_cast<Rank>(rankIndex);
+  return CreateSquare(AdjustFile(file), AdjustRank(rank));
 }
 
 std::pair<ImVec2, ImVec2> RenderBox(const ImVec2& origin, Square square) {
@@ -129,37 +142,109 @@ void DrawMoves(ImDrawList* drawList, const ImVec2& origin, const Board& board, c
   }
 }
 
-void DrawBoard(ImDrawList* drawList, const Chess& game, const ImVec2& origin,
-               Square highlightedSquare) {
-  const auto& state = game.GetState();
-  const auto& board = state.board;
-  const auto turn = state.turn;
-  DrawSquares(drawList, origin);
-  if (highlightedSquare != Square::kInvalid) {
-    const auto moves = game.GetLegalMoves(highlightedSquare);
-    DrawMoves(drawList, origin, board, moves);
-    const auto [topLeft, bottomRight] = RenderBox(origin, highlightedSquare);
-    drawList->AddRectFilled(topLeft, bottomRight, kHighlightedSquareColor);
+MoveType DetermineMoveType(Square from, Square to, const Board& board) {
+  const auto fromPiece = board[from];
+  const auto fromBasePiece = GetBasePiece(fromPiece);
+  const auto fileDiff = std::abs(GetFile(from) - GetFile(to));
+  if (fromBasePiece == BasePiece::kKing && fileDiff == 2) {
+    switch (to) {
+    case G1:
+    case G8:
+      return MoveType::kKingCastle;
+    case C1:
+    case C8:
+      return MoveType::kQueenCastle;
+    }
+  } else if (fromBasePiece == BasePiece::kPawn) {
+    if (GetRank(to) == Rank::_1 || GetRank(to) == Rank::_8) {
+      return MoveType::kQueenPromotion; // TODO: implement promotion GUI
+    }
+    const auto rankDiff = std::abs(GetRank(from) - GetRank(to));
+    const auto toPiece = board[to];
+    if (fileDiff == 1 && rankDiff == 1 && toPiece == Piece::kNone) {
+      return MoveType::kEnPassant;
+    }
   }
-  if (game.IsInCheck()) {
-    DrawCheck(drawList, origin, board, turn);
-  }
-  DrawPieces(drawList, origin, board);
+  return MoveType::kNormal;
 }
 
 } // namespace
 
-Square ChessView::ScreenToSquare(const ImVec2& mouse) {
-  const auto origin = ImGui::GetCursorScreenPos();
-  const auto file = static_cast<File>((mouse.x - origin.x) / kCellSize);
-  const auto rank = static_cast<Rank>((mouse.y - origin.y) / kCellSize);
-  return CreateSquare(AdjustFile(file), AdjustRank(rank));
+ChessBoardPanel::ChessBoardPanel()
+  : highlightedSquare_{Square::kInvalid},
+    drawData_{{}, Color::kWhite, false, {}},
+    dirty_{true} {
 }
 
-void ChessView::Draw(const Chess& game, Square highlightedSquare) {
-  const auto drawList = ImGui::GetWindowDrawList();
+void ChessBoardPanel::UpdateDrawData(const Chess& chess) {
+  const auto& chessState = chess.GetState();
+  drawData_ = DrawData{};
+  drawData_.board = chessState.board;
+  drawData_.turn = chessState.turn;
+  drawData_.isInCheck = chess.IsInCheck();
+  drawData_.legalMoves = chess.GetLegalMoves(highlightedSquare_);
+}
+
+void ChessBoardPanel::OnSquareClickedEvent(Chess& chess, Square clickedSquare) {
+  if (clickedSquare == Square::kInvalid) {
+    highlightedSquare_ = Square::kInvalid;
+    return;
+  }
+
+  const auto& gameState = chess.GetState();
+  const auto& board = gameState.board;
+  const auto clickedPiece = board[clickedSquare];
+  const auto clickedOnAllyPiece =
+      clickedPiece != Piece::kNone && GetPieceColor(clickedPiece) == gameState.turn;
+
+  if (highlightedSquare_ == Square::kInvalid) {
+    if (clickedOnAllyPiece) {
+      highlightedSquare_ = clickedSquare;
+    }
+  } else {
+    const auto highlightedPiece = board[highlightedSquare_];
+    if (clickedSquare == highlightedSquare_) {
+      highlightedSquare_ = Square::kInvalid;
+    } else if (clickedOnAllyPiece) {
+      highlightedSquare_ = clickedSquare;
+    } else {
+      const auto moveType = DetermineMoveType(highlightedSquare_, clickedSquare, board);
+      const auto move = CreateMove(highlightedSquare_, clickedSquare, moveType);
+      chess.MakeMove(move);
+      highlightedSquare_ = Square::kInvalid;
+    }
+  }
+
+  dirty_ = true;
+}
+
+void ChessBoardPanel::OnUIRender(Chess& chess) {
+  ImGui::Begin("Chess");
+
   const auto origin = ImGui::GetCursorScreenPos();
-  DrawBoard(drawList, game, origin, highlightedSquare);
+  if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+    const auto square = ScreenToSquare(origin, ImGui::GetMousePos());
+    OnSquareClickedEvent(chess, square);
+  }
+
+  if (dirty_) {
+    UpdateDrawData(chess);
+    dirty_ = false;
+  }
+
+  auto drawList = ImGui::GetWindowDrawList();
+  DrawSquares(drawList, origin);
+  if (highlightedSquare_ != Square::kInvalid) {
+    DrawMoves(drawList, origin, drawData_.board, drawData_.legalMoves);
+    const auto [topLeft, bottomRight] = RenderBox(origin, highlightedSquare_);
+    drawList->AddRectFilled(topLeft, bottomRight, kHighlightedSquareColor);
+  }
+  if (drawData_.isInCheck) {
+    DrawCheck(drawList, origin, drawData_.board, drawData_.turn);
+  }
+  DrawPieces(drawList, origin, drawData_.board);
+
+  ImGui::End();
 }
 
 } // namespace chess

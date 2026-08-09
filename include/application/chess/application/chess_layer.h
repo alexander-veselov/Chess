@@ -1,9 +1,9 @@
 #pragma once
 
 #include "chess/application/chess.h"
-#include "chess/application/chess_controller.h"
-#include "chess/application/chess_view.h"
+#include "chess/application/chess_board_panel.h"
 #include "chess/application/layer.h"
+#include "chess/core/square.h"
 
 namespace chess {
 
@@ -12,9 +12,8 @@ public:
   void OnUIRender() override;
 
 private:
-  Chess game_;
-  ChessController controller_;
-  ChessView view_;
+  Chess chess_;
+  ChessBoardPanel chessBoardPanel_;
 };
 
 }; // namespace chess

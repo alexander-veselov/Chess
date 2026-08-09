@@ -1,6 +1,10 @@
 #include "chess/application/chess_layer.h"
 
+#include "chess/application/texture.h"
 #include "chess/core/square.h"
+
+#include <utility>
+#include <unordered_map>
 
 #include <imgui.h>
 
@@ -16,21 +20,12 @@ void ChessLayer::OnUIRender() {
                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
                    ImGuiWindowFlags_NoCollapse);
 
-  const auto status = game_.GetStatus();
+  const auto status = chess_.GetStatus();
   ImGui::SetWindowFontScale(3.0f);
   ImGui::Text("%s", StatusToString(status).data());
   ImGui::SetWindowFontScale(1.0f);
 
-  if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-    const auto mousePosition = ImGui::GetMousePos();
-
-    const auto square = view_.ScreenToSquare(mousePosition);
-    if (square != Square::kInvalid) {
-      controller_.SquareClickedEvent(game_, square);
-    }
-  }
-
-  view_.Draw(game_, controller_.GetHighlightedSquare());
+  chessBoardPanel_.OnUIRender(chess_);
 
   ImGui::End();
   ImGui::PopStyleVar();
