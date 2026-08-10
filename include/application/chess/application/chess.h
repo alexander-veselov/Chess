@@ -1,12 +1,12 @@
 #pragma once
 
-#include "chess/core/status.h"
-#include "chess/core/state.h"
-#include "chess/core/square.h"
-#include "chess/core/moves.h"
 #include "chess/core/move.h"
+#include "chess/core/square.h"
+#include "chess/core/state.h"
+#include "chess/core/status.h"
 
 #include <string_view>
+#include <vector>
 
 namespace chess {
 
@@ -20,12 +20,12 @@ public:
   const Status GetStatus() const;
   bool IsInCheck() const;
   bool MakeMove(Move move);
-  Moves GetLegalMoves(Square square) const;
-  Moves GetHistory() const;
+  std::vector<Move> GetLegalMoves(Square square) const;
+  std::vector<Move> GetHistory() const;
 
 private:
   State state_;
-  Moves history_;
+  std::vector<Move> history_;
 };
 
 } // namespace chess

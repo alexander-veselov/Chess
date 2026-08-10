@@ -22,24 +22,24 @@ Square EvaluateEnPassant(Square from, Square to, Piece fromPiece) {
   return Square::kInvalid;
 }
 
-Bitboard AllyPieces(const State& state) {
-  auto allyPieces = Bitboard{};
-  if (state.turn == Color::kWhite) {
-    allyPieces |= state.bitboards[kWhiteKing];
-    allyPieces |= state.bitboards[kWhiteQueen];
-    allyPieces |= state.bitboards[kWhiteRook];
-    allyPieces |= state.bitboards[kWhiteBishop];
-    allyPieces |= state.bitboards[kWhiteKnight];
-    allyPieces |= state.bitboards[kWhitePawn];
-  } else if (state.turn == Color::kBlack) {
-    allyPieces |= state.bitboards[kBlackKing];
-    allyPieces |= state.bitboards[kBlackQueen];
-    allyPieces |= state.bitboards[kBlackRook];
-    allyPieces |= state.bitboards[kBlackBishop];
-    allyPieces |= state.bitboards[kBlackKnight];
-    allyPieces |= state.bitboards[kBlackPawn];
+Bitboard GetPiecesOfColor(const State& state, Color color) {
+  auto pieces = Bitboard{};
+  if (color == Color::kWhite) {
+    pieces |= state.bitboards[kWhiteKing];
+    pieces |= state.bitboards[kWhiteQueen];
+    pieces |= state.bitboards[kWhiteRook];
+    pieces |= state.bitboards[kWhiteBishop];
+    pieces |= state.bitboards[kWhiteKnight];
+    pieces |= state.bitboards[kWhitePawn];
+  } else if (color == Color::kBlack) {
+    pieces |= state.bitboards[kBlackKing];
+    pieces |= state.bitboards[kBlackQueen];
+    pieces |= state.bitboards[kBlackRook];
+    pieces |= state.bitboards[kBlackBishop];
+    pieces |= state.bitboards[kBlackKnight];
+    pieces |= state.bitboards[kBlackPawn];
   }
-  return allyPieces;
+  return pieces;
 }
 
 bool IsAttacked(const State& state, Color turn, Square square) {
@@ -88,9 +88,9 @@ bool IsAttacked(const State& state, Color turn, Square square) {
   return false;
 }
 
-void GetKingMoves(const State& state, Bitboard allyPieces, Bitboard king, Moves& moves) {
+void GetKingMoves(const State& state, Bitboard mask, Bitboard king, Moves& moves) {
   const auto from = PopLSB(king);
-  auto attacks = KingAttacks(from) & ~allyPieces;
+  auto attacks = KingAttacks(from) & mask;
   while (attacks) {
     const auto to = PopLSB(attacks);
     moves.push_back(CreateMove(from, to));
@@ -121,10 +121,10 @@ void GetKingMoves(const State& state, Bitboard allyPieces, Bitboard king, Moves&
   }
 }
 
-void GetRookMoves(const State& state, Bitboard allyPieces, Bitboard rooks, Moves& moves) {
+void GetRookMoves(const State& state, Bitboard mask, Bitboard rooks, Moves& moves) {
   while (rooks) {
     const auto from = PopLSB(rooks);
-    auto attacks = RookAttacks(from, ~state.bitboards[kNone]) & ~allyPieces;
+    auto attacks = RookAttacks(from, ~state.bitboards[kNone]) & mask;
     while (attacks) {
       const auto to = PopLSB(attacks);
       moves.push_back(CreateMove(from, to));
@@ -132,10 +132,10 @@ void GetRookMoves(const State& state, Bitboard allyPieces, Bitboard rooks, Moves
   }
 }
 
-void GetBishopMoves(const State& state, Bitboard allyPieces, Bitboard bishops, Moves& moves) {
+void GetBishopMoves(const State& state, Bitboard mask, Bitboard bishops, Moves& moves) {
   while (bishops) {
     const auto from = PopLSB(bishops);
-    auto attacks = BishopAttacks(from, ~state.bitboards[kNone]) & ~allyPieces;
+    auto attacks = BishopAttacks(from, ~state.bitboards[kNone]) & mask;
     while (attacks) {
       const auto to = PopLSB(attacks);
       moves.push_back(CreateMove(from, to));
@@ -143,10 +143,10 @@ void GetBishopMoves(const State& state, Bitboard allyPieces, Bitboard bishops, M
   }
 }
 
-void GetQueenMoves(const State& state, Bitboard allyPieces, Bitboard queens, Moves& moves) {
+void GetQueenMoves(const State& state, Bitboard mask, Bitboard queens, Moves& moves) {
   while (queens) {
     const auto from = PopLSB(queens);
-    auto attacks = QueenAttacks(from, ~state.bitboards[kNone]) & ~allyPieces;
+    auto attacks = QueenAttacks(from, ~state.bitboards[kNone]) & mask;
     while (attacks) {
       const auto to = PopLSB(attacks);
       moves.push_back(CreateMove(from, to));
@@ -154,10 +154,10 @@ void GetQueenMoves(const State& state, Bitboard allyPieces, Bitboard queens, Mov
   }
 }
 
-void GetKnightMoves(const State& state, Bitboard allyPieces, Bitboard knights, Moves& moves) {
+void GetKnightMoves(const State& state, Bitboard mask, Bitboard knights, Moves& moves) {
   while (knights) {
     const auto from = PopLSB(knights);
-    auto attacks = KnightAttacks(from) & ~allyPieces;
+    auto attacks = KnightAttacks(from) & mask;
     while (attacks) {
       const auto to = PopLSB(attacks);
       moves.push_back(CreateMove(from, to));
@@ -165,11 +165,11 @@ void GetKnightMoves(const State& state, Bitboard allyPieces, Bitboard knights, M
   }
 }
 
-void GetPawnMoves(const State& state, Bitboard allyPieces, Bitboard pawns, Moves& moves) {
+void GetPawnMoves(const State& state, Bitboard mask, Bitboard pawns, Moves& moves) {
   const auto enPassantBB =
       state.enPassant == Square::kInvalid ? kEmptyBoard : BBFromSquare(state.enPassant);
   const auto occupancy = ~state.bitboards[kNone];
-  const auto captures = ~allyPieces & occupancy | enPassantBB;
+  const auto captures = mask & occupancy | enPassantBB;
   while (pawns) {
     const auto from = PopLSB(pawns);
     const auto pawn = BBFromSquare(from);
@@ -248,42 +248,14 @@ bool IsPotentiallyPinned(Bitboard bishopAttacks, Bitboard rookAttacks, bool hasD
          hasOrthogonalPin && (rookAttacks & bitboard);
 }
 
-} // namespace
-
-Status GetStatus(const State& state) {
-  const auto isInCheck = IsInCheck(state, state.turn);
-  const auto hasAvailableMoves = HasAvailableMoves(state);
-  if (!hasAvailableMoves) {
-    if (isInCheck) {
-      return state.turn == Color::kWhite ? Status::kBlackWon : Status::kWhiteWon;
-    } else {
-      return Status::kDraw;
-    }
-  }
-
-  // TODO: implement draw by repetition/insufficient material/etc
-
-  return state.turn == Color::kWhite ? Status::kWhiteToMove : Status::kBlackToMove;
-}
-
-bool IsInCheck(const State& state, Color turn) {
-  if (turn == Color::kWhite) {
-    return IsAttacked(state, turn, LSB(state.bitboards[kWhiteKing]));
-  } else if (turn == Color::kBlack) {
-    return IsAttacked(state, turn, LSB(state.bitboards[kBlackKing]));
-  }
-  return false;
-}
-
-void GetLegalMoves(const State& state, Moves& legalMoves) {
+void GetMoves(const State& state, Bitboard mask, Moves& legalMoves) {
   auto moves = Moves{};
-  const auto allyPieces = AllyPieces(state);
-  GetQueenMoves (state, allyPieces, state.bitboards[MakePiece(state.turn, BasePiece::kQueen )], moves);
-  GetPawnMoves  (state, allyPieces, state.bitboards[MakePiece(state.turn, BasePiece::kPawn  )], moves);
-  GetRookMoves  (state, allyPieces, state.bitboards[MakePiece(state.turn, BasePiece::kRook  )], moves);
-  GetBishopMoves(state, allyPieces, state.bitboards[MakePiece(state.turn, BasePiece::kBishop)], moves);
-  GetKnightMoves(state, allyPieces, state.bitboards[MakePiece(state.turn, BasePiece::kKnight)], moves);
-  GetKingMoves  (state, allyPieces, state.bitboards[MakePiece(state.turn, BasePiece::kKing  )], moves);
+  GetQueenMoves (state, mask, state.bitboards[MakePiece(state.turn, BasePiece::kQueen )], moves);
+  GetPawnMoves  (state, mask, state.bitboards[MakePiece(state.turn, BasePiece::kPawn  )], moves);
+  GetRookMoves  (state, mask, state.bitboards[MakePiece(state.turn, BasePiece::kRook  )], moves);
+  GetBishopMoves(state, mask, state.bitboards[MakePiece(state.turn, BasePiece::kBishop)], moves);
+  GetKnightMoves(state, mask, state.bitboards[MakePiece(state.turn, BasePiece::kKnight)], moves);
+  GetKingMoves  (state, mask, state.bitboards[MakePiece(state.turn, BasePiece::kKing  )], moves);
 
   const auto occupancy = ~state.bitboards[kNone];
   const auto kingSquare = LSB(state.bitboards[MakePiece(state.turn, BasePiece::kKing)]);
@@ -312,6 +284,43 @@ void GetLegalMoves(const State& state, Moves& legalMoves) {
       legalMoves.push_back(move);
     }
   }
+}
+
+} // namespace
+
+Status GetStatus(const State& state) {
+  const auto hasAvailableMoves = HasAvailableMoves(state);
+  if (!hasAvailableMoves) {
+    if (IsInCheck(state, state.turn)) {
+      return state.turn == Color::kWhite ? Status::kBlackWon : Status::kWhiteWon;
+    } else {
+      return Status::kDraw;
+    }
+  }
+
+  // TODO: implement draw by repetition/insufficient material/etc
+
+  return state.turn == Color::kWhite ? Status::kWhiteToMove : Status::kBlackToMove;
+}
+
+bool IsInCheck(const State& state, Color turn) {
+  if (turn == Color::kWhite) {
+    return IsAttacked(state, turn, LSB(state.bitboards[kWhiteKing]));
+  } else if (turn == Color::kBlack) {
+    return IsAttacked(state, turn, LSB(state.bitboards[kBlackKing]));
+  }
+  return false;
+}
+
+void GetLegalMoves(const State& state, Moves& legalMoves) {
+  const auto mask = ~GetPiecesOfColor(state, state.turn);
+  return GetMoves(state, mask, legalMoves);
+}
+
+void GetCaptures(const State& state, Moves& legalMoves) {
+  // TODO: fix pawns, check other types
+  const auto mask = GetPiecesOfColor(state, FlipColor(state.turn));
+  return GetMoves(state, mask, legalMoves);
 }
 
 void MakeMove(State& state, Move move) {

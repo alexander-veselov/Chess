@@ -1,7 +1,5 @@
 #include "chess/core/random.h"
 
-#include <random>
-
 namespace {
 
 thread_local auto rng = std::mt19937_64{std::random_device{}()};
@@ -15,6 +13,10 @@ inline T GenerateUniformInteger(T min, T max) {
 } // namespace
 
 namespace chess {
+
+std::mt19937_64& GetRNG() {
+  return rng;
+}
 
 U32 RandomU32(U32 min, U32 max) {
   return GenerateUniformInteger<U32>(min, max);

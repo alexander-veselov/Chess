@@ -23,6 +23,19 @@ struct State {
   CastlingRightsMask castlingRightsMask;
 };
 
+constexpr bool operator==(const State& state1, const State& state2) {
+  return state1.board == state2.board &&
+         state1.bitboards == state2.bitboards &&
+         state1.halfmoveClock == state2.halfmoveClock &&
+         state1.fullmoveNumber == state2.fullmoveNumber &&
+         state1.turn == state2.turn &&
+         state1.enPassant == state2.enPassant &&
+         state1.castlingRightsMask == state2.castlingRightsMask;
+}
+
+constexpr auto kNullState =
+    State{{}, {}, U16{0}, U16{0}, Color::kWhite, Square::kInvalid, CastlingRightsMask{0}};
+
 constexpr void FillBitboardsFromBoard(State& state) {
   state.bitboards = {};
   for (auto square = 0; square < Square::kSquareCount; ++square) {

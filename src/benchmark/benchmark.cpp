@@ -60,10 +60,11 @@ static void Perft(benchmark::State& state, std::string_view position, U32 depth)
 
 static void Engine(benchmark::State& state, std::string_view position, U32 depth) {
   const auto gameState = chess::StateFromFEN(position.data());
-  auto move = chess::Move{};
+  auto moves = std::vector<chess::Move>{};
+  auto score = chess::Score{};
   for (auto _ : state) {
-    move = chess::BestMove(gameState, depth);
-    benchmark::DoNotOptimize(move);
+    std::tie(moves, score) = chess::BestMove(gameState, depth);
+    benchmark::DoNotOptimize(moves);
   }
 }
 

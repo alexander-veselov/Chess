@@ -1,5 +1,6 @@
 #include "chess/application/chess_information_panel.h"
 
+#include "chess/application/analysis.h"
 #include "chess/application/chess.h"
 #include "chess/core/fen.h"
 
@@ -8,7 +9,7 @@
 namespace chess {
 namespace {
 
-std::string MovesToString(const Moves& moves) {
+std::string MovesToString(const std::vector<Move>& moves) {
   if (moves.empty()) {
     return {};
   }
@@ -22,7 +23,7 @@ std::string MovesToString(const Moves& moves) {
 
 } // namespace
 
-void ChessInformationPanel::OnUIRender(Chess& chess) {
+void ChessInformationPanel::OnUIRender(Chess& chess, Analysis& analysis) {
   ImGui::BeginChild("ChessInformationPanel");
 
   const auto status = chess.GetStatus();
@@ -39,6 +40,12 @@ void ChessInformationPanel::OnUIRender(Chess& chess) {
                             ImGuiInputTextFlags_::ImGuiInputTextFlags_ReadOnly |
                             ImGuiInputTextFlags_::ImGuiInputTextFlags_WordWrap);
 
+  analysisLine_ = MovesToString(analysis.GetLine());
+  const auto analysisLineSize = ImGui::GetContentRegionAvail();
+  ImGui::InputTextMultiline("##analysisLine", analysisLine_.data(), analysisLine_.capacity(), analysisLineSize,
+                            ImGuiInputTextFlags_::ImGuiInputTextFlags_ReadOnly |
+                            ImGuiInputTextFlags_::ImGuiInputTextFlags_WordWrap);
+  
   ImGui::EndChild();
 }
 

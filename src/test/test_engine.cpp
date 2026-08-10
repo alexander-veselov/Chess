@@ -14,8 +14,9 @@ TEST(Chess, EngineMateIn2_1) {
     if (IsGameOver(status)) {
       break;
     }
-    const auto move = chess::BestMove(state, kDepth);
-    chess::MakeMove(state, move);
+    const auto [moves, score] = chess::BestMove(state, kDepth);
+    ASSERT_FALSE(moves.empty());
+    chess::MakeMove(state, moves[0]);
   }
   EXPECT_EQ(status, chess::Status::kWhiteWon);
 }
@@ -29,8 +30,9 @@ TEST(Chess, EngineMateIn2_2) {
     if (IsGameOver(status)) {
       break;
     }
-    const auto move = chess::BestMove(state, kDepth);
-    chess::MakeMove(state, move);
+    const auto [moves, score] = chess::BestMove(state, kDepth);
+    ASSERT_FALSE(moves.empty());
+    chess::MakeMove(state, moves[0]);
   }
   EXPECT_EQ(status, chess::Status::kWhiteWon);
 }

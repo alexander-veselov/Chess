@@ -59,9 +59,9 @@ bool Chess::MakeMove(Move move) {
   return isLegal;
 }
 
-Moves Chess::GetLegalMoves(Square square) const {
+std::vector<Move> Chess::GetLegalMoves(Square square) const {
   // TODO: improve that function
-  auto movesForSquare = Moves{};
+  auto movesForSquare = std::vector<Move>{};
   auto legalMoves = Moves{};
   chess::GetLegalMoves(state_, legalMoves);
   for (const auto move : legalMoves) {
@@ -72,7 +72,7 @@ Moves Chess::GetLegalMoves(Square square) const {
   return movesForSquare;
 }
 
-Moves Chess::GetHistory() const {
+std::vector<Move> Chess::GetHistory() const {
   return history_;
 }
 

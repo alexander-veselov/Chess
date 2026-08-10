@@ -2,7 +2,8 @@
 
 #include "chess/core/bits.h"
 #include "chess/core/game.h"
-#include "chess/core/types.h"
+#include "chess/core/random.h"
+#include "chess/engine/pv_table.h"
 
 #include <algorithm>
 #include <array>
@@ -10,24 +11,21 @@
 namespace chess {
 namespace {
 
-using Score = I32;
-constexpr auto kMaxScore = Score(999);
-
 constexpr auto kPieceValues = [] {
   std::array<Score, kPieceCount> values{};
-  values[kNone]         =  0;
-  values[kWhiteKing]    =  0;
-  values[kWhiteQueen]   = +9;
-  values[kWhiteRook]    = +5;
-  values[kWhiteBishop]  = +3;
-  values[kWhiteKnight]  = +3;
-  values[kWhitePawn]    = +1;
-  values[kBlackKing]    =  0;
-  values[kBlackQueen]   = -9;
-  values[kBlackRook]    = -5;
-  values[kBlackBishop]  = -3;
-  values[kBlackKnight]  = -3;
-  values[kBlackPawn]    = -1;
+  values[kNone]         =    0;
+  values[kWhiteKing]    =    0;
+  values[kWhiteQueen]   = +900;
+  values[kWhiteRook]    = +500;
+  values[kWhiteBishop]  = +325;
+  values[kWhiteKnight]  = +310;
+  values[kWhitePawn]    = +100;
+  values[kBlackKing]    =    0;
+  values[kBlackQueen]   = -900;
+  values[kBlackRook]    = -500;
+  values[kBlackBishop]  = -325;
+  values[kBlackKnight]  = -310;
+  values[kBlackPawn]    = -100;
   return values;
 }();
 
@@ -47,65 +45,51 @@ Score EvaluateBoard(const State& state) {
   return value;
 }
 
-Score GameOverScore(Status status) {
-  switch (status) {
-  case Status::kWhiteWon:
-    return +kMaxScore;
-  case Status::kBlackWon:
-    return -kMaxScore;
-  }
-  return 0;
-}
-
-Score ScorePenalty(Score score, U32 depth, U32 maxDepth) {
-  if (score == 0) {
-    return 0;
-  }
-  const auto penalty = static_cast<Score>(maxDepth) - static_cast<Score>(depth);
-  return score > 0 ? -penalty : +penalty;
-}
-
-Score EvaluateState(const State& state, Status status, U32 depth, U32 maxDepth) {
-  auto score = 0;
-  if (IsGameOver(status)) {
-    score = GameOverScore(status);
-    score += ScorePenalty(score, depth, maxDepth);
-  } else {
-    score = EvaluateBoard(state);
-  }
+Score EvaluateState(const State& state) {
+  const auto score = EvaluateBoard(state);
   return state.turn == Color::kWhite ? score : -score;
 }
 
-Score Quiesce(const State& state, Score alpha, Score beta, U32 depth, U32 maxDepth) {
-  const auto status = GetStatus(state);
-  const auto staticEval = EvaluateState(state, status, depth, maxDepth);
-  if (depth == 0 || IsGameOver(status)) {
-    return staticEval;
-  }
-  if (staticEval >= beta) {
-    return beta;
-  }
-  alpha = std::max(alpha, staticEval);
-
-  auto value = staticEval;
+Score Quiesce(const State& state, Score alpha, Score beta, U32 ply) {
   auto moves = Moves{};
-  GetLegalMoves(state, moves);
+  GetCaptures(state, moves);
+  if (moves.empty()) {
+    if (IsInCheck(state, state.turn)) {
+      return MatedIn(ply);
+    } else {
+      return kDrawScore;
+    }
+  }
+  const auto staticEval = EvaluateState(state);
+  auto bestValue = staticEval;
+  if (bestValue >= beta) {
+    return bestValue;
+  }
+  if (bestValue > alpha) {
+    alpha = bestValue;
+  }
   for (const auto& move : moves) {
     if (state.board[GetTo(move)] == Piece::kNone) {
       continue;
     }
     auto childState = State{state};
     MakeMove(childState, move);
-    value = std::max(value, -Quiesce(childState, -beta, -alpha, depth - 1, maxDepth));
-    if (value >= beta) {
-      return beta;
+    const auto score = -Quiesce(childState, -beta, -alpha, ply + 1);
+    if (score >= beta) {
+      return score;
     }
-    alpha = std::max(alpha, value);
+    if (score > bestValue) {
+      bestValue = score;
+    }
+    if (score > alpha) {
+      alpha = score;
+    }
   }
-  return value;
+  return bestValue;
 }
 
 void OrderMoves(const State& state, Moves& moves) {
+  std::shuffle(moves.begin(), moves.end(), GetRNG());
   std::sort(moves.begin(), moves.end(), [&state](Move move1, Move move2) {
     const auto capture1 = state.board[GetTo(move1)] != Piece::kNone;
     const auto capture2 = state.board[GetTo(move2)] != Piece::kNone;
@@ -113,23 +97,29 @@ void OrderMoves(const State& state, Moves& moves) {
   });
 }
 
-Score Negamax(const State& state, Score alpha, Score beta, U32 depth, U32 maxDepth) {
-  const auto status = GetStatus(state);
-  if (IsGameOver(status)) {
-    return EvaluateState(state, status, depth, maxDepth);
-  }
+Score Negamax(const State& state, Score alpha, Score beta, U32 ply, U32 depth, PVTable& pvTable) {
   if (depth == 0) {
-    return Quiesce(state, alpha, beta, maxDepth, maxDepth);
+    return Quiesce(state, alpha, beta, ply);
   }
   auto moves = Moves{};
   GetLegalMoves(state, moves);
+  if (moves.empty()) {
+    if (IsInCheck(state, state.turn)) {
+      return MatedIn(ply);
+    } else {
+      return kDrawScore;
+    }
+  }
   OrderMoves(state, moves);
-  auto value = Score(-kMaxScore);
+  auto value = Score(-kInfinity);
   for (const auto& move : moves) {
     auto childState = State{state};
     MakeMove(childState, move);
-    value = std::max(value, -Negamax(childState, -beta, -alpha, depth - 1, maxDepth));
-    alpha = std::max(alpha, value);
+    value = std::max(value, -Negamax(childState, -beta, -alpha, ply + 1, depth - 1, pvTable));
+    if (value > alpha) {
+      alpha = value;
+      pvTable.Update(ply, depth, move);
+    }
     if (alpha >= beta) {
       break;
     }
@@ -139,28 +129,11 @@ Score Negamax(const State& state, Score alpha, Score beta, U32 depth, U32 maxDep
 
 } // namespace
 
-Move BestMove(const State& state, U32 depth) {
-  auto moves = Moves{};
-  GetLegalMoves(state, moves);
-  OrderMoves(state, moves);
-  auto bestMove = moves.empty() ? Move{} : moves[0];
-  auto bestValue = -kMaxScore;
-  auto alpha = -kMaxScore;
-  auto beta = kMaxScore;
-  for (const auto& move : moves) {
-    auto childState = State{state};
-    MakeMove(childState, move);
-    auto newValue = -Negamax(childState, -beta, -alpha, depth - 1, depth - 1);
-    if (newValue > bestValue) {
-      bestValue = newValue;
-      bestMove = move;
-    }
-    alpha = std::max(alpha, newValue);
-    if (alpha >= beta) {
-      break;
-    }
-  }
-  return bestMove;
+std::pair<std::vector<Move>, Score> BestMove(const State& state, U32 depth) {
+  static auto pvTable = PVTable{};
+  const auto score = Negamax(state, -kInfinity, kInfinity, 0, depth, pvTable);
+  const auto lineSize = IsMateInN(score) ? GetMatePly(score) : depth;
+  return {pvTable.GetLine(lineSize), score};
 }
 
 } // namespace chess

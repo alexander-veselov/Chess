@@ -81,6 +81,10 @@ void Application::Run() {
     ImGui::NewFrame();
 
     for (auto& layer : layer_stack_) {
+      layer->OnUpdate();
+    }
+
+    for (auto& layer : layer_stack_) {
       layer->OnUIRender();
     }
 
