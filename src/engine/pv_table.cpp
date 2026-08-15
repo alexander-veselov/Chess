@@ -2,12 +2,8 @@
 
 namespace chess {
 
-std::vector<Move> PVTable::GetLine(U32 depth) const {
-  auto line = std::vector<Move>{};
-  for (auto i = 0; i < depth; ++i) {
-    line.push_back(table_[i]);
-  }
-  return line;
+std::span<const Move> PVTable::GetLine(U32 depth) const {
+  return {table_.data(), depth};
 }
 
 void PVTable::Update(U32 ply, U32 depth, Move move) {

@@ -13,13 +13,13 @@ namespace chess {
 void ChessLayer::OnUpdate() {
   const auto& state = chess_.GetState();
   analysis_.SetEnabled(controlsPanel_.GetEnableAnalysis());
-  if (analysis_.GetEnabled()) {
-    analysis_.Update(state);
-  }
+  analysis_.Update(state);
   if (controlsPanel_.GetUseAutoPilot(state.turn)) {
-    const auto& line = analysis_.GetLine();
-    if (!line.empty()) {
-      chess_.MakeMove(line[0]);
+    if (analysis_.IsReady()) {
+      const auto& line = analysis_.GetLine();
+      if (!line.empty()) {
+        chess_.MakeMove(line[0]);
+      }
     }
   } else {
     const auto move = chessBoardPanel_.PopPendingMove();

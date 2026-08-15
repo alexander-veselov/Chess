@@ -129,11 +129,11 @@ Score Negamax(const State& state, Score alpha, Score beta, U32 ply, U32 depth, P
 
 } // namespace
 
-std::pair<std::vector<Move>, Score> BestMove(const State& state, U32 depth) {
+std::pair<std::span<const Move>, Score> BestMove(const State& state, U32 depth) {
   static auto pvTable = PVTable{};
   const auto score = Negamax(state, -kInfinity, kInfinity, 0, depth, pvTable);
   const auto lineSize = IsMateInN(score) ? GetMatePly(score) : depth;
-  return {pvTable.GetLine(lineSize), score};
+  return {pvTable.GetLine(lineSize), state.turn == Color::kWhite ? score : -score};
 }
 
 } // namespace chess

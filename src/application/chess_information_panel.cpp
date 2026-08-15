@@ -9,7 +9,7 @@
 namespace chess {
 namespace {
 
-std::string MovesToString(const std::vector<Move>& moves) {
+std::string MovesToString(const std::span<const Move> moves) {
   if (moves.empty()) {
     return {};
   }

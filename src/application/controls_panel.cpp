@@ -14,6 +14,9 @@ bool ControlsPanel::GetEnableAnalysis() const {
 }
 
 bool ControlsPanel::GetUseAutoPilot(Color color) const {
+  if (!enableAnalysis_) {
+    return false;
+  }
   switch (autoPilotOption_) {
   case AutoPilotOption::kDisabled:
     return false;

@@ -5,11 +5,12 @@
 #include "chess/core/types.h"
 #include "chess/engine/score.h"
 
+#include <span>
 #include <utility>
 #include <vector>
 
 namespace chess {
 
-std::pair<std::vector<Move>, Score> BestMove(const State& state, U32 depth = 6);
+std::pair<std::span<const Move>, Score> BestMove(const State& state, U32 depth = 6);
 
 }

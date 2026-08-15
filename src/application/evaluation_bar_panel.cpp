@@ -45,7 +45,7 @@ void EvaluationBarPanel::OnUIRender(const Analysis& analysis) {
     return;
   }
 
-  const auto [evalPerspectiveColor, evaluation] = analysis.GetEvaluation();
+  const auto evaluation = analysis.GetEvaluation();
 
   const auto currentPlayerBarSize = EvaluationToBarSize(evaluation, panelSize.y);
   const auto oppositePlayerBarSize = panelSize.y - currentPlayerBarSize;
@@ -54,7 +54,7 @@ void EvaluationBarPanel::OnUIRender(const Analysis& analysis) {
   const auto lowerColor = kPerspectiveColor == Color::kWhite ? kWhiteColor : kBlackColor;
 
   const auto splitPosition =
-      kPerspectiveColor == evalPerspectiveColor ? oppositePlayerBarSize : currentPlayerBarSize;
+      kPerspectiveColor == Color::kWhite ? oppositePlayerBarSize : currentPlayerBarSize;
 
   const auto topLeftUpper = origin;
   const auto bottomRightUpper = ImVec2{origin.x + panelSize.x, origin.y + splitPosition};

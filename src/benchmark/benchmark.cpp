@@ -3,12 +3,14 @@
 #include "chess/core/attacks.h"
 #include "chess/core/fen.h"
 #include "chess/core/magic_bitboards.h"
+#include "chess/core/move.h"
 #include "chess/core/perft.h"
 #include "chess/core/random.h"
 #include "chess/core/types.h"
 #include "chess/engine/engine.h"
 
 #include <random>
+#include <span>
 #include <string_view>
 #include <vector>
 
@@ -60,7 +62,7 @@ static void Perft(benchmark::State& state, std::string_view position, U32 depth)
 
 static void Engine(benchmark::State& state, std::string_view position, U32 depth) {
   const auto gameState = chess::StateFromFEN(position.data());
-  auto moves = std::vector<chess::Move>{};
+  auto moves = std::span<const chess::Move>{};
   auto score = chess::Score{};
   for (auto _ : state) {
     std::tie(moves, score) = chess::BestMove(gameState, depth);
