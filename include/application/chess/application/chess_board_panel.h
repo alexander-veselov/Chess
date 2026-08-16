@@ -18,7 +18,7 @@ class Chess;
 class ChessBoardPanel {
 public:
   ChessBoardPanel();
-  void OnUIRender(const Chess& chess);
+  void OnUIRender(const Chess& chess, bool flipBoard);
   std::optional<Move> PopPendingMove();
 
 private:

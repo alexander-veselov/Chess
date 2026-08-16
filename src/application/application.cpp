@@ -1,7 +1,5 @@
 #include "chess/application/application.h"
 
-#include "chess/application/ui_constants.h"
-
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -29,10 +27,12 @@ bool Application::Initialize() {
     return false;
   }
 
+  const auto contentScale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
+
   auto windowSpecification = Window::Specification{};
   windowSpecification.name = "Chess";
-  windowSpecification.width = kWindowWidth;
-  windowSpecification.height = kWindowHeight;
+  windowSpecification.width = 1280 * contentScale;
+  windowSpecification.height = 720 * contentScale;
 
   window_ = std::make_unique<Window>(windowSpecification);
   if (!window_->Create()) {
@@ -42,7 +42,6 @@ bool Application::Initialize() {
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
 
-  const auto contentScale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
   ImGui::GetStyle().ScaleAllSizes(contentScale);
   ImGui::GetStyle().FontScaleDpi = contentScale;
 

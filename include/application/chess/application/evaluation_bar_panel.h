@@ -6,7 +6,7 @@ namespace chess {
 
 class EvaluationBarPanel {
 public:
-  void OnUIRender(const Analysis& analysis);
+  void OnUIRender(const Analysis& analysis, bool flipBoard);
 };
 
 }; // namespace chess

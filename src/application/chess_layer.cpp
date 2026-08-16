@@ -35,12 +35,13 @@ void ChessLayer::OnUIRender() {
   ImGui::Begin("Chess", nullptr,
                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
                    ImGuiWindowFlags_NoCollapse);
-    evaluationBarPanel_.OnUIRender(analysis_);
-    ImGui::SameLine(); chessBoardPanel_.OnUIRender(chess_);
+    const auto flipBoard = controlsPanel_.GetFlipBoard();
+    evaluationBarPanel_.OnUIRender(analysis_, flipBoard);
+    ImGui::SameLine(); chessBoardPanel_.OnUIRender(chess_, flipBoard);
     ImGui::SameLine(); ImGui::BeginChild("ChessSidePanel");
       ImGui::SetNextWindowSize(
           ImVec2{ImGui::GetContentRegionAvail().x,
-                 ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeightWithSpacing()});
+                 ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeightWithSpacing() * 2.f});
       chessInformationPanel_.OnUIRender(chess_, analysis_);
       controlsPanel_.OnUIRender();
     ImGui::EndChild();

@@ -6,11 +6,16 @@ namespace chess {
 
 ControlsPanel::ControlsPanel()
   : enableAnalysis_{true},
+    flipBoard_{false},
     autoPilotOption_{0} {
 }
 
 bool ControlsPanel::GetEnableAnalysis() const {
   return enableAnalysis_;
+}
+
+bool ControlsPanel::GetFlipBoard() const {
+  return flipBoard_;
 }
 
 bool ControlsPanel::GetUseAutoPilot(Color color) const {
@@ -36,9 +41,11 @@ void ControlsPanel::OnUIRender() {
   ImGui::SameLine();
   ImGui::BeginDisabled(!enableAnalysis_);
   auto autoPilotOption = static_cast<int>(autoPilotOption_);
-  ImGui::Combo("##dropdown", &autoPilotOption, kAutoPilotOptions.data(), kAutoPilotOptions.size());
+  ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+  ImGui::Combo("##autoPilot", &autoPilotOption, kAutoPilotOptions.data(), kAutoPilotOptions.size());
   autoPilotOption_ = static_cast<AutoPilotOption>(autoPilotOption);
   ImGui::EndDisabled();
+  ImGui::Checkbox("Flip board", &flipBoard_);
   ImGui::EndChild();
 }
 

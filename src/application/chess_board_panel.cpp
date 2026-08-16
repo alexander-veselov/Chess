@@ -2,7 +2,6 @@
 
 #include "chess/application/chess.h"
 #include "chess/application/texture.h"
-#include "chess/application/ui_constants.h"
 #include "chess/core/move.h"
 #include "chess/core/piece.h"
 #include "chess/core/square.h"
@@ -21,11 +20,8 @@ constexpr auto kHighlightedSquareColor = IM_COL32(255, 255, 0, 80);
 constexpr auto kLightSquareColor = IM_COL32(238, 238, 210, 255);
 constexpr auto kMoveColor = IM_COL32(0, 0, 0, 64);
 
-constexpr auto kMoveCircleSize = kCellSize / 6.f;
-constexpr auto kCaptureCircleThickness = kCellSize / 12.f;
-constexpr auto kCaptureCircleSize = kCellSize / 2.f - kCaptureCircleThickness / 2.f + 1.f;
-constexpr auto kCheckCircleThickness = kCellSize / 12.f;
-constexpr auto kCheckCircleRadius = kCellSize / 2.f - kCheckCircleThickness / 2.f + 1.f;
+auto g_CellSize = 0.f;
+auto g_FlipBoard = false;
 
 ImTextureID GetTexture(Piece piece) {
   // TODO: refactor
@@ -53,16 +49,16 @@ ImTextureID GetTexture(Piece piece) {
 }
 
 Rank AdjustRank(Rank rank) {
-  return kPerspectiveColor == Color::kBlack ? rank : static_cast<Rank>(kBoardSize - rank - 1);
+  return g_FlipBoard ? rank : static_cast<Rank>(kBoardSize - rank - 1);
 }
 
 File AdjustFile(File file) {
-  return kPerspectiveColor == Color::kBlack ? static_cast<File>(kBoardSize - file - 1) : file;
+  return g_FlipBoard ? static_cast<File>(kBoardSize - file - 1) : file;
 }
 
 Square ScreenToSquare(const ImVec2& origin, const ImVec2& mouse) {
-  const auto fileIndex = std::floor((mouse.x - origin.x) / kCellSize);
-  const auto rankIndex = std::floor((mouse.y - origin.y) / kCellSize);
+  const auto fileIndex = static_cast<U8>(std::floor((mouse.x - origin.x) / g_CellSize));
+  const auto rankIndex = static_cast<U8>(std::floor((mouse.y - origin.y) / g_CellSize));
   if (fileIndex < File::_A || fileIndex > File::_H ||
       rankIndex < Rank::_1 || rankIndex > Rank::_8) {
     return Square::kInvalid;
@@ -73,10 +69,10 @@ Square ScreenToSquare(const ImVec2& origin, const ImVec2& mouse) {
 }
 
 std::pair<ImVec2, ImVec2> RenderBox(const ImVec2& origin, Square square) {
-  const auto rank = AdjustRank(GetRank(square));
-  const auto file = AdjustFile(GetFile(square));
-  const auto topLeft = ImVec2{origin.x + file * kCellSize, origin.y + rank * kCellSize};
-  const auto bottomRight = ImVec2{topLeft.x + kCellSize, topLeft.y + kCellSize};
+  const auto rank = static_cast<U8>(AdjustRank(GetRank(square)));
+  const auto file = static_cast<U8>(AdjustFile(GetFile(square)));
+  const auto topLeft = ImVec2{origin.x + file * g_CellSize, origin.y + rank * g_CellSize};
+  const auto bottomRight = ImVec2{topLeft.x + g_CellSize, topLeft.y + g_CellSize};
   return {topLeft, bottomRight};
 }
 
@@ -113,7 +109,9 @@ void DrawCheck(ImDrawList* drawList, const ImVec2& origin, const Board& board, C
     }
     const auto [topLeft, bottomRight] = RenderBox(origin, square);
     const auto center = Center(topLeft, bottomRight);
-    drawList->AddCircle(center, kCheckCircleRadius, kCheckCircleColor, 0, kCheckCircleThickness);
+    const auto checkCircleThickness = g_CellSize / 12.f;
+    const auto checkCircleRadius = g_CellSize / 2.f - checkCircleThickness / 2.f + 1.f;
+    drawList->AddCircle(center, checkCircleRadius, kCheckCircleColor, 0, checkCircleThickness);
   }
 }
 
@@ -126,6 +124,30 @@ void DrawSquares(ImDrawList* drawList, const ImVec2& origin) {
   }
 }
 
+void DrawSquaresEnumeration(ImDrawList* drawList, const ImVec2& origin) {
+  const auto padding = g_CellSize / 24.f;
+  for (auto rankIndex = 0; rankIndex < kBoardSize; ++rankIndex) {
+    const auto rank = static_cast<Rank>(rankIndex);
+    const auto rankString = RankToString(rank);
+    const auto square = CreateSquare(g_FlipBoard ? _H : _A, rank);
+    const auto [topLeft, bottomRight] = RenderBox(origin, square);
+    const auto position = ImVec2{topLeft.x + padding, topLeft.y + padding};
+    const auto color = GetColor(square) == Color::kBlack ? kLightSquareColor : kDarkSquareColor;
+    drawList->AddText(position, color, rankString.data());
+  }
+  for (auto fileIndex = 0; fileIndex < kBoardSize; ++fileIndex) {
+    const auto file = static_cast<File>(fileIndex);
+    const auto fileString = FileToString(file);
+    const auto fileStringSize = ImGui::CalcTextSize(fileString.data());
+    const auto square = CreateSquare(file, g_FlipBoard ? _8 : _1);
+    const auto [topLeft, bottomRight] = RenderBox(origin, square);
+    const auto position = ImVec2{bottomRight.x - padding - fileStringSize.x,
+                                 bottomRight.y - padding - fileStringSize.y};
+    const auto color = GetColor(square) == Color::kBlack ? kLightSquareColor : kDarkSquareColor;
+    drawList->AddText(position, color, fileString.data());
+  }
+}
+
 void DrawMoves(ImDrawList* drawList, const ImVec2& origin, const Board& board,
                const std::vector<Move>& moves) {
   for (const auto move : moves) {
@@ -133,9 +155,12 @@ void DrawMoves(ImDrawList* drawList, const ImVec2& origin, const Board& board,
     const auto [topLeft, bottomRight] = RenderBox(origin, to);
     const auto center = Center(topLeft, bottomRight);
     if (board[to] != Piece::kNone) {
-      drawList->AddCircle(center, kCaptureCircleSize, kMoveColor, 0, kCaptureCircleThickness);
+      const auto captureCircleThickness = g_CellSize / 12.f;
+      const auto captureCircleSize = g_CellSize / 2.f - captureCircleThickness / 2.f + 1.f;
+      drawList->AddCircle(center, captureCircleSize, kMoveColor, 0, captureCircleThickness);
     } else {
-      drawList->AddCircleFilled(center, kMoveCircleSize, kMoveColor);
+      const auto moveCircleSize = g_CellSize / 6.f;
+      drawList->AddCircleFilled(center, moveCircleSize, kMoveColor);
     }
   }
 }
@@ -217,8 +242,11 @@ std::optional<Move> ChessBoardPanel::PopPendingMove() {
   return move;
 }
 
-void ChessBoardPanel::OnUIRender(const Chess& chess) {
-  ImGui::BeginChild("ChessBoardPanel", ImVec2(kCellSize * kBoardSize, kCellSize * kBoardSize));
+void ChessBoardPanel::OnUIRender(const Chess& chess, bool flipBoard) {
+  g_CellSize = ImGui::GetContentRegionAvail().y / 8.f;
+  g_FlipBoard = flipBoard;
+
+  ImGui::BeginChild("ChessBoardPanel", ImVec2(g_CellSize * kBoardSize, g_CellSize * kBoardSize));
 
   const auto origin = ImGui::GetCursorScreenPos();
   if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
@@ -232,6 +260,7 @@ void ChessBoardPanel::OnUIRender(const Chess& chess) {
   }
   auto drawList = ImGui::GetWindowDrawList();
   DrawSquares(drawList, origin);
+  DrawSquaresEnumeration(drawList, origin);
   if (highlightedSquare_ != Square::kInvalid) {
     DrawMoves(drawList, origin, drawData_.board, drawData_.legalMoves);
     const auto [topLeft, bottomRight] = RenderBox(origin, highlightedSquare_);

@@ -1,7 +1,5 @@
 #include "chess/application/evaluation_bar_panel.h"
 
-#include "chess/application/ui_constants.h"
-
 #include <algorithm>
 #include <cmath>
 #include <format>
@@ -28,8 +26,9 @@ float EvaluationToBarSize(Score evaluation, float panelHeight) {
 
 } // namespace
 
-void EvaluationBarPanel::OnUIRender(const Analysis& analysis) {
-  const auto panelSize = ImVec2{kCellSize / 4.f, ImGui::GetContentRegionAvail().y};
+void EvaluationBarPanel::OnUIRender(const Analysis& analysis, bool flipBoard) {
+  const auto cellSize = ImGui::GetContentRegionAvail().y / 8.f;
+  const auto panelSize = ImVec2{cellSize / 4.f, ImGui::GetContentRegionAvail().y};
   ImGui::BeginChild("EvaluationBarPanel", panelSize);
 
   auto& style = ImGui::GetStyle();
@@ -50,11 +49,10 @@ void EvaluationBarPanel::OnUIRender(const Analysis& analysis) {
   const auto currentPlayerBarSize = EvaluationToBarSize(evaluation, panelSize.y);
   const auto oppositePlayerBarSize = panelSize.y - currentPlayerBarSize;
 
-  const auto upperColor = kPerspectiveColor == Color::kWhite ? kBlackColor : kWhiteColor;
-  const auto lowerColor = kPerspectiveColor == Color::kWhite ? kWhiteColor : kBlackColor;
+  const auto upperColor = flipBoard ? kWhiteColor : kBlackColor;
+  const auto lowerColor = flipBoard ? kBlackColor : kWhiteColor;
 
-  const auto splitPosition =
-      kPerspectiveColor == Color::kWhite ? oppositePlayerBarSize : currentPlayerBarSize;
+  const auto splitPosition = flipBoard ? currentPlayerBarSize : oppositePlayerBarSize;
 
   const auto topLeftUpper = origin;
   const auto bottomRightUpper = ImVec2{origin.x + panelSize.x, origin.y + splitPosition};
