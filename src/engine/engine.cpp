@@ -1,8 +1,8 @@
 #include "chess/engine/engine.h"
 
+#include "chess/core/attacks.h"
 #include "chess/core/bits.h"
 #include "chess/core/game.h"
-#include "chess/core/random.h"
 #include "chess/engine/pv_table.h"
 
 #include <algorithm>
@@ -29,10 +29,84 @@ constexpr auto kPieceValues = [] {
   return values;
 }();
 
+constexpr auto kBasePieceCount = static_cast<size_t>(BasePiece::kBasePieceCount);
+constexpr auto kMvvLva = [] {
+  auto table = std::array<std::array<Score, kBasePieceCount>, kBasePieceCount>{};
+  for (auto attacker = 0; attacker < kBasePieceCount; ++attacker) {
+    for (auto victim = 0; victim < kBasePieceCount; ++victim) {
+      const auto victimPiece = static_cast<BasePiece>(victim);
+      if (victimPiece == BasePiece::kNone || victimPiece == BasePiece::kKing) {
+        continue;
+      }
+      table[attacker][victim] = kPieceValues[victim] * 10 - kPieceValues[attacker];
+    }
+  }
+  return table;
+}();
+
+Score MvvLva(const Board& board, Move move) {
+  const auto fromPiece = GetBasePiece(board[GetFrom(move)]);
+  const auto toPiece = GetBasePiece(board[GetTo(move)]);
+  return kMvvLva[static_cast<size_t>(fromPiece)][static_cast<size_t>(toPiece)];
+}
+
+Bitboard GetPiecesOfColor(const State& state, Color color) {
+  auto pieces = Bitboard{};
+  if (color == Color::kWhite) {
+    pieces |= state.bitboards[kWhiteKing];
+    pieces |= state.bitboards[kWhiteQueen];
+    pieces |= state.bitboards[kWhiteRook];
+    pieces |= state.bitboards[kWhiteBishop];
+    pieces |= state.bitboards[kWhiteKnight];
+    pieces |= state.bitboards[kWhitePawn];
+  } else if (color == Color::kBlack) {
+    pieces |= state.bitboards[kBlackKing];
+    pieces |= state.bitboards[kBlackQueen];
+    pieces |= state.bitboards[kBlackRook];
+    pieces |= state.bitboards[kBlackBishop];
+    pieces |= state.bitboards[kBlackKnight];
+    pieces |= state.bitboards[kBlackPawn];
+  }
+  return pieces;
+}
+
+I8 AttackCount(Piece piece, Square square, Bitboard mask, Bitboard occupancy) {
+  switch (GetBasePiece(piece)) {
+  case BasePiece::kKing:
+    return PopCount(KingAttacks(square) & mask);
+  case BasePiece::kKnight:
+    return PopCount(KnightAttacks(square) & mask);
+  case BasePiece::kQueen:
+    return PopCount(QueenAttacks(square, occupancy) & mask);
+  case BasePiece::kBishop:
+    return PopCount(BishopAttacks(square, occupancy) & mask);
+  case BasePiece::kRook:
+    return PopCount(RookAttacks(square, occupancy) & mask);
+  case BasePiece::kPawn:
+    return 0;
+  }
+  return 0;
+}
+
 Score EvaluatePiece(Piece piece, Bitboard bitboard) {
   const auto baseValue = kPieceValues[piece];
   const auto pieceCount = PopCount(bitboard);
   const auto value = baseValue * pieceCount;
+  return value;
+}
+
+Score EvaluateBoard2(const State& state) {
+  auto value = 0;
+  const auto nonWhite = ~GetPiecesOfColor(state, Color::kWhite);
+  const auto nonBlack = ~GetPiecesOfColor(state, Color::kBlack);
+  const auto occupancy = ~state.bitboards[Piece::kNone];
+  for (auto squareIndex = 0; squareIndex < kBoardTotalSize; ++squareIndex) {
+    const auto piece = state.board[squareIndex];
+    value += kPieceValues[piece];
+    const auto mask = GetPieceColor(piece) == Color::kWhite ? nonWhite : nonBlack;
+    const auto attacks = AttackCount(piece, (Square)squareIndex, mask, occupancy);
+    value += GetPieceColor(piece) == Color::kWhite ? attacks : -attacks;
+  }
   return value;
 }
 
@@ -48,6 +122,12 @@ Score EvaluateBoard(const State& state) {
 Score EvaluateState(const State& state) {
   const auto score = EvaluateBoard(state);
   return state.turn == Color::kWhite ? score : -score;
+}
+
+void OrderMoves(const State& state, Moves& moves) {
+  std::sort(moves.begin(), moves.end(), [&state](Move move1, Move move2) {
+    return MvvLva(state.board, move1) > MvvLva(state.board, move2);
+  });
 }
 
 Score Quiesce(const State& state, Score alpha, Score beta, U32 ply) {
@@ -68,6 +148,7 @@ Score Quiesce(const State& state, Score alpha, Score beta, U32 ply) {
   if (bestValue > alpha) {
     alpha = bestValue;
   }
+  OrderMoves(state, moves);
   for (const auto& move : moves) {
     if (state.board[GetTo(move)] == Piece::kNone) {
       continue;
@@ -86,15 +167,6 @@ Score Quiesce(const State& state, Score alpha, Score beta, U32 ply) {
     }
   }
   return bestValue;
-}
-
-void OrderMoves(const State& state, Moves& moves) {
-  std::shuffle(moves.begin(), moves.end(), GetRNG());
-  std::sort(moves.begin(), moves.end(), [&state](Move move1, Move move2) {
-    const auto capture1 = state.board[GetTo(move1)] != Piece::kNone;
-    const auto capture2 = state.board[GetTo(move2)] != Piece::kNone;
-    return capture1 > capture2;
-  });
 }
 
 Score Negamax(const State& state, Score alpha, Score beta, U32 ply, U32 depth, PVTable& pvTable) {

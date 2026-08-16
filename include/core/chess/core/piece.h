@@ -15,6 +15,7 @@ enum class BasePiece : U8 {
   kBishop,
   kKnight,
   kPawn,
+  kBasePieceCount
 };
 
 constexpr U8 MAKE_PIECE(Color color, BasePiece basePiece) {
