@@ -221,8 +221,12 @@ void ChessBoardPanel::OnSquareClickedEvent(const Chess& chess, Square clickedSqu
       clickedPiece != Piece::kNone && GetPieceColor(clickedPiece) == gameState.turn;
 
   if (clickedOnAllyPiece) {
-    highlightedSquare_ = clickedSquare;
-    drawData_.legalMoves = chess.GetLegalMoves(highlightedSquare_);
+    if (highlightedSquare_ == clickedSquare) {
+      highlightedSquare_ = Square::kInvalid;
+    } else {
+      highlightedSquare_ = clickedSquare;
+      drawData_.legalMoves = chess.GetLegalMoves(highlightedSquare_);
+    }
   } else if (highlightedSquare_ != Square::kInvalid) {
     const auto highlightedPiece = board[highlightedSquare_];
     if (clickedSquare == highlightedSquare_) {
