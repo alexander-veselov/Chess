@@ -3,8 +3,9 @@
 #include "chess/application/texture.h"
 #include "chess/core/square.h"
 
-#include <utility>
+#include <iostream>
 #include <unordered_map>
+#include <utility>
 
 #include <imgui.h>
 
@@ -14,17 +15,23 @@ void ChessLayer::OnUpdate() {
   const auto& state = chess_.GetState();
   analysis_.SetEnabled(controlsPanel_.GetEnableAnalysis());
   analysis_.Update(state);
+  autoPilot_.Update(state, analysis_);
+  if (IsGameOver(chess_.GetStatus())) {
+    return;
+  }
   if (controlsPanel_.GetUseAutoPilot(state.turn)) {
-    if (analysis_.IsReady()) {
-      const auto& line = analysis_.GetLine();
-      if (!line.empty()) {
-        chess_.MakeMove(line[0]);
+    const auto move = autoPilot_.PopPendingMove();
+    if (move.has_value()) {
+      if (!chess_.MakeMove(move.value())) {
+        std::cout << "Auto pilot produced illegal move: " << MoveToString(move.value()) << std::endl;
       }
     }
   } else {
     const auto move = chessBoardPanel_.PopPendingMove();
     if (move.has_value()) {
-      chess_.MakeMove(move.value());
+      if (!chess_.MakeMove(move.value())) {
+        std::cout << "Player produced illegal move" << MoveToString(move.value()) << std::endl;
+      }
     }
   }
 }

@@ -24,6 +24,8 @@ constexpr Move CreateMove(Square from, Square to, MoveType type = MoveType::kNor
   return from | (to << 6) | (static_cast<Move>(type) << 12);
 }
 
+constexpr auto kInvalidMove = CreateMove(A1, A1);
+
 constexpr Square GetFrom(Move move) {
   return static_cast<Square>(move & 0b111111);
 }

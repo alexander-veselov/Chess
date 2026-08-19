@@ -9,6 +9,8 @@
 namespace chess {
 
 Status GetStatus(const State& state);
+bool Is50MoveRuleDraw(const State& state);
+bool IsThreefoldRepetition(const State& state);
 bool IsInCheck(const State& state, Color turn);
 void GetCaptures(const State& state, Moves& legalMoves);
 void GetLegalMoves(const State& state, Moves& legalMoves);

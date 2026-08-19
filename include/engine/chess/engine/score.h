@@ -8,8 +8,8 @@ namespace chess {
 
 using Score = I32;
 
-constexpr auto kInfinity = Score{99999};
-constexpr auto kMaxScore = Score{88888};
+constexpr auto kInfinity = Score{32000};
+constexpr auto kMaxScore = Score{30000};
 constexpr auto kDrawScore = Score{0};
 
 constexpr Score MatedIn(U32 ply) {

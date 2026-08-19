@@ -3,10 +3,13 @@
 #include "chess/core/attacks.h"
 #include "chess/core/bits.h"
 #include "chess/core/game.h"
+#include "chess/core/random.h"
 #include "chess/engine/pv_table.h"
+#include "chess/engine/transposition_table.h"
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 
 namespace chess {
 namespace {
@@ -124,35 +127,46 @@ Score EvaluateState(const State& state) {
   return state.turn == Color::kWhite ? score : -score;
 }
 
-void OrderMoves(const State& state, Moves& moves) {
-  std::sort(moves.begin(), moves.end(), [&state](Move move1, Move move2) {
+void OrderMoves(const State& state, Move ttMove, Moves& moves, bool shuffle=true) {
+  if (moves.empty()) {
+    return;
+  }
+  if (shuffle) {
+    std::shuffle(moves.begin(), moves.end(), GetRNG());
+  }
+  if (ttMove != kInvalidMove) {
+    auto it = std::find(moves.begin(), moves.end(), ttMove);
+    if (it != moves.end()) {
+      std::swap(*moves.begin(), *it);
+    }
+  }
+  std::sort(moves.begin() + 1, moves.end(), [&state](Move move1, Move move2) {
     return MvvLva(state.board, move1) > MvvLva(state.board, move2);
   });
 }
 
 Score Quiesce(const State& state, Score alpha, Score beta, U32 ply) {
   auto moves = Moves{};
-  GetCaptures(state, moves);
-  if (moves.empty()) {
-    if (IsInCheck(state, state.turn)) {
+  auto bestValue = Score{};
+  if (IsInCheck(state, state.turn)) {
+    bestValue = Score(-kInfinity);
+    GetLegalMoves(state, moves);
+    if (moves.empty()) {
       return MatedIn(ply);
-    } else {
-      return kDrawScore;
     }
+  } else {
+    const auto staticEval = EvaluateState(state);
+    bestValue = staticEval;
+    if (bestValue >= beta) {
+      return bestValue;
+    }
+    if (bestValue > alpha) {
+      alpha = bestValue;
+    }
+    GetCaptures(state, moves); // TODO: add promotions
   }
-  const auto staticEval = EvaluateState(state);
-  auto bestValue = staticEval;
-  if (bestValue >= beta) {
-    return bestValue;
-  }
-  if (bestValue > alpha) {
-    alpha = bestValue;
-  }
-  OrderMoves(state, moves);
+  OrderMoves(state, kInvalidMove, moves);
   for (const auto& move : moves) {
-    if (state.board[GetTo(move)] == Piece::kNone) {
-      continue;
-    }
     auto childState = State{state};
     MakeMove(childState, move);
     const auto score = -Quiesce(childState, -beta, -alpha, ply + 1);
@@ -169,10 +183,35 @@ Score Quiesce(const State& state, Score alpha, Score beta, U32 ply) {
   return bestValue;
 }
 
-Score Negamax(const State& state, Score alpha, Score beta, U32 ply, U32 depth, PVTable& pvTable) {
+Score Negamax(const State& state, Score alpha, Score beta, U32 ply, U32 depth, U64& nodes,
+              TranspositionTable& transpotisionTable, PVTable& pvTable, std::stop_token stopToken) {
+  if (stopToken.stop_requested()) {
+    return 0;
+  }
+
+  ++nodes;
+
   if (depth == 0) {
     return Quiesce(state, alpha, beta, ply);
   }
+
+  if (Is50MoveRuleDraw(state)) {
+    return kDrawScore;
+  }
+
+  if (IsThreefoldRepetition(state)) {
+    return kDrawScore;
+  }
+
+  auto ttEntry = TTEntry{};
+  if (transpotisionTable.ProbeHash(state.hash, ply, depth, alpha, beta, ttEntry)) {
+    // TODO: fix threefold repetition bug
+    if (ttEntry.type == TTEntryType::kExact) {
+      pvTable.Update(ply, depth, ttEntry.move);
+    }
+    return ttEntry.score;
+  }
+
   auto moves = Moves{};
   GetLegalMoves(state, moves);
   if (moves.empty()) {
@@ -182,30 +221,88 @@ Score Negamax(const State& state, Score alpha, Score beta, U32 ply, U32 depth, P
       return kDrawScore;
     }
   }
-  OrderMoves(state, moves);
-  auto value = Score(-kInfinity);
+
+  OrderMoves(state, ttEntry.move, moves);
+
+  auto bestValue = Score(-kInfinity);
+  auto bestMove = moves[0];
+  auto ttEntryType = TTEntryType::kUpperBound;
   for (const auto& move : moves) {
     auto childState = State{state};
     MakeMove(childState, move);
-    value = std::max(value, -Negamax(childState, -beta, -alpha, ply + 1, depth - 1, pvTable));
+
+    const auto value = -Negamax(childState, -beta, -alpha, ply + 1, depth - 1, nodes,
+                                transpotisionTable, pvTable, stopToken);
+    if (value > bestValue) {
+      bestValue = value;
+      bestMove = move;
+    }
     if (value > alpha) {
       alpha = value;
+      ttEntryType = TTEntryType::kExact;
       pvTable.Update(ply, depth, move);
     }
     if (alpha >= beta) {
+      ttEntryType = TTEntryType::kLowerBound;
       break;
     }
   }
-  return value;
+
+  if (!stopToken.stop_requested()) {
+    transpotisionTable.RecordHash(state.hash, ply, depth, bestValue, ttEntryType, bestMove);
+  }
+
+  return bestValue;
+}
+
+void RecostructFullLine(std::vector<Move>& moves, U32 depth, const State& state, const TranspositionTable& tt) {
+  auto currentState = State{state};
+  for (const auto move : moves) {
+    MakeMove(currentState, move);
+  }
+  while (moves.size() < depth) {
+    if (IsGameOver(GetStatus(currentState))) {
+      return;
+    }
+    auto entry = TTEntry{};
+    if (!tt.GetEntry(currentState.hash, entry) || entry.move == kInvalidMove) {
+      return;
+    }
+    MakeMove(currentState, entry.move); // TODO: check if move is valid
+    moves.push_back(entry.move);
+  }
 }
 
 } // namespace
 
-std::pair<std::span<const Move>, Score> BestMove(const State& state, U32 depth) {
-  static auto pvTable = PVTable{};
-  const auto score = Negamax(state, -kInfinity, kInfinity, 0, depth, pvTable);
-  const auto lineSize = IsMateInN(score) ? GetMatePly(score) : depth;
-  return {pvTable.GetLine(lineSize), state.turn == Color::kWhite ? score : -score};
+SearchInfo BestMove(const State& state, U32 maxDepth, SearchInfoCallback callback,
+                    std::stop_token stopToken) {
+  static auto transpotisionTable = TranspositionTable{};
+  auto start = std::chrono::steady_clock::now();
+  auto nodes = U64{0};
+  auto searchInfo = SearchInfo{};
+  for (auto depth = 1; depth <= maxDepth; ++depth) {
+    auto pvTable = PVTable{};
+    const auto score = Negamax(state, -kInfinity, kInfinity, 0, depth, nodes, transpotisionTable,
+                               pvTable, stopToken);
+    if (stopToken.stop_requested()) {
+      break;
+    }
+    const auto duration = std::chrono::steady_clock::now() - start;
+    const auto lineSize = IsMateInN(score) ? GetMatePly(score) : depth;
+    searchInfo.hash = state.hash;
+    searchInfo.score = state.turn == Color::kWhite ? score : -score;
+    searchInfo.line = pvTable.GetLine(lineSize);
+    RecostructFullLine(searchInfo.line, depth, state, transpotisionTable);
+    searchInfo.depth = depth;
+    searchInfo.nodes = nodes;
+    searchInfo.nodesPerSecond = nodes / std::chrono::duration<double>(duration).count();
+    if (callback) {
+      callback(searchInfo);
+    }
+  }
+  return searchInfo;
 }
+
 
 } // namespace chess

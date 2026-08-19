@@ -1,6 +1,7 @@
 #pragma once
 
 #include "chess/application/analysis.h"
+#include "chess/application/auto_pilot.h"
 #include "chess/application/chess.h"
 #include "chess/application/chess_board_panel.h"
 #include "chess/application/chess_information_panel.h"
@@ -19,6 +20,7 @@ public:
 private:
   Chess chess_;
   Analysis analysis_;
+  AutoPilot autoPilot_;
   ChessBoardPanel chessBoardPanel_;
   ChessInformationPanel chessInformationPanel_;
   EvaluationBarPanel evaluationBarPanel_;

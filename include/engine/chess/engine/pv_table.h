@@ -4,7 +4,6 @@
 #include "chess/core/types.h"
 
 #include <array>
-#include <span>
 #include <vector>
 
 namespace chess {
@@ -17,7 +16,7 @@ private:
   TableType table_;
 
 public:
-  std::span<const Move> GetLine(U32 depth) const;
+  std::vector<Move> GetLine(U32 depth) const;
   void Update(U32 ply, U32 depth, Move move);
 
 private:

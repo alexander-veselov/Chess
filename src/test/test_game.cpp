@@ -3,6 +3,9 @@
 #include "chess/core/fen.h"
 #include "chess/core/perft.h"
 #include "chess/core/state.h"
+#include "chess/core/zobrist_hash.h"
+
+using namespace chess;
 
 namespace {
 constexpr auto kPosition1 = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -14,18 +17,18 @@ constexpr auto kPosition6 = "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1
 }
 
 TEST(Chess, FEN_Empty) {
-  const auto state = chess::StateFromFEN("8/8/8/8/8/8/8/8 w - - 0 0");
-  EXPECT_EQ(state.enPassant, chess::Square::kInvalid);
-  EXPECT_EQ(state.turn, chess::Color::kWhite);
+  const auto state = StateFromFEN("8/8/8/8/8/8/8/8 w - - 0 0");
+  EXPECT_EQ(state.enPassant, Square::kInvalid);
+  EXPECT_EQ(state.turn, Color::kWhite);
   EXPECT_EQ(state.castlingRightsMask, 0);
   EXPECT_EQ(state.halfmoveClock, 0);
   EXPECT_EQ(state.fullmoveNumber, 0);
 }
 
 TEST(Chess, FEN_Default) {
-  const auto state = chess::StateFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-  EXPECT_EQ(state.enPassant, chess::Square::kInvalid);
-  EXPECT_EQ(state.turn, chess::Color::kWhite);
+  const auto state = StateFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+  EXPECT_EQ(state.enPassant, Square::kInvalid);
+  EXPECT_EQ(state.turn, Color::kWhite);
   EXPECT_EQ(state.castlingRightsMask, 0b1111);
   EXPECT_EQ(state.halfmoveClock, 0);
   EXPECT_EQ(state.fullmoveNumber, 1);
@@ -33,50 +36,50 @@ TEST(Chess, FEN_Default) {
 
 TEST(Chess, FEN_ViseVersa1) {
   const auto expectedFen = kPosition1;
-  const auto state = chess::StateFromFEN(expectedFen);
-  const auto actualFen = chess::StateToFEN(state);
+  const auto state = StateFromFEN(expectedFen);
+  const auto actualFen = StateToFEN(state);
   EXPECT_EQ(expectedFen, actualFen);
 }
 
 TEST(Chess, FEN_ViseVersa2) {
   const auto expectedFen = kPosition2;
-  const auto state = chess::StateFromFEN(expectedFen);
-  const auto actualFen = chess::StateToFEN(state);
+  const auto state = StateFromFEN(expectedFen);
+  const auto actualFen = StateToFEN(state);
   EXPECT_EQ(expectedFen, actualFen);
 }
 
 TEST(Chess, FEN_ViseVersa3) {
   const auto expectedFen = kPosition3;
-  const auto state = chess::StateFromFEN(expectedFen);
-  const auto actualFen = chess::StateToFEN(state);
+  const auto state = StateFromFEN(expectedFen);
+  const auto actualFen = StateToFEN(state);
   EXPECT_EQ(expectedFen, actualFen);
 }
 
 TEST(Chess, FEN_ViseVersa4) {
   const auto expectedFen = kPosition4;
-  const auto state = chess::StateFromFEN(expectedFen);
-  const auto actualFen = chess::StateToFEN(state);
+  const auto state = StateFromFEN(expectedFen);
+  const auto actualFen = StateToFEN(state);
   EXPECT_EQ(expectedFen, actualFen);
 }
 
 TEST(Chess, FEN_ViseVersa5) {
   const auto expectedFen = kPosition5;
-  const auto state = chess::StateFromFEN(expectedFen);
-  const auto actualFen = chess::StateToFEN(state);
+  const auto state = StateFromFEN(expectedFen);
+  const auto actualFen = StateToFEN(state);
   EXPECT_EQ(expectedFen, actualFen);
 }
 
 TEST(Chess, FEN_ViseVersa6) {
   const auto expectedFen = kPosition6;
-  const auto state = chess::StateFromFEN(expectedFen);
-  const auto actualFen = chess::StateToFEN(state);
+  const auto state = StateFromFEN(expectedFen);
+  const auto actualFen = StateToFEN(state);
   EXPECT_EQ(expectedFen, actualFen);
 }
 
 TEST(Chess, FEN_EnPassant) {
-  const auto state = chess::StateFromFEN("8/8/8/2k5/2pP4/8/B7/4K3 b - d3 0 3");
-  EXPECT_EQ(state.enPassant, chess::D3);
-  EXPECT_EQ(state.turn, chess::Color::kBlack);
+  const auto state = StateFromFEN("8/8/8/2k5/2pP4/8/B7/4K3 b - d3 0 3");
+  EXPECT_EQ(state.enPassant, D3);
+  EXPECT_EQ(state.turn, Color::kBlack);
   EXPECT_EQ(state.castlingRightsMask, 0);
   EXPECT_EQ(state.halfmoveClock, 0);
   EXPECT_EQ(state.fullmoveNumber, 3);
@@ -87,8 +90,8 @@ TEST(Chess, FEN_EnPassant) {
 TEST(Chess, PerftPosition1Depth1) {
   constexpr auto kDepth = 1;
   constexpr auto kNodes = 20;
-  const auto state = chess::StateFromFEN(kPosition1);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition1);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -96,8 +99,8 @@ TEST(Chess, PerftPosition1Depth1) {
 TEST(Chess, PerftPosition1Depth2) {
   constexpr auto kDepth = 2;
   constexpr auto kNodes = 400;
-  const auto state = chess::StateFromFEN(kPosition1);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition1);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -105,8 +108,8 @@ TEST(Chess, PerftPosition1Depth2) {
 TEST(Chess, PerftPosition1Depth3) {
   constexpr auto kDepth = 3;
   constexpr auto kNodes = 8902;
-  const auto state = chess::StateFromFEN(kPosition1);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition1);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -114,8 +117,8 @@ TEST(Chess, PerftPosition1Depth3) {
 TEST(Chess, PerftPosition1Depth4) {
   constexpr auto kDepth = 4;
   constexpr auto kNodes = 197281;
-  const auto state = chess::StateFromFEN(kPosition1);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition1);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -123,8 +126,8 @@ TEST(Chess, PerftPosition1Depth4) {
 TEST(Chess, PerftPosition1Depth5) {
   constexpr auto kDepth = 5;
   constexpr auto kNodes = 4865609;
-  const auto state = chess::StateFromFEN(kPosition1);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition1);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -132,8 +135,8 @@ TEST(Chess, PerftPosition1Depth5) {
 TEST(Chess, PerftPosition1Depth6) {
   constexpr auto kDepth = 6;
   constexpr auto kNodes = 119060324;
-  const auto state = chess::StateFromFEN(kPosition1);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition1);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -143,8 +146,8 @@ TEST(Chess, PerftPosition1Depth6) {
 TEST(Chess, PerftPosition2Depth1) {
   constexpr auto kDepth = 1;
   constexpr auto kNodes = 48;
-  const auto state = chess::StateFromFEN(kPosition2);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition2);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -152,8 +155,8 @@ TEST(Chess, PerftPosition2Depth1) {
 TEST(Chess, PerftPosition2Depth2) {
   constexpr auto kDepth = 2;
   constexpr auto kNodes = 2039;
-  const auto state = chess::StateFromFEN(kPosition2);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition2);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -161,8 +164,8 @@ TEST(Chess, PerftPosition2Depth2) {
 TEST(Chess, PerftPosition2Depth3) {
   constexpr auto kDepth = 3;
   constexpr auto kNodes = 97862;
-  const auto state = chess::StateFromFEN(kPosition2);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition2);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -170,8 +173,8 @@ TEST(Chess, PerftPosition2Depth3) {
 TEST(Chess, PerftPosition2Depth4) {
   constexpr auto kDepth = 4;
   constexpr auto kNodes = 4085603;
-  const auto state = chess::StateFromFEN(kPosition2);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition2);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -179,8 +182,8 @@ TEST(Chess, PerftPosition2Depth4) {
 TEST(Chess, PerftPosition2Depth5) {
   constexpr auto kDepth = 5;
   constexpr auto kNodes = 193690690;
-  const auto state = chess::StateFromFEN(kPosition2);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition2);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -190,8 +193,8 @@ TEST(Chess, PerftPosition2Depth5) {
 TEST(Chess, PerftPosition3Depth1) {
   constexpr auto kDepth = 1;
   constexpr auto kNodes = 14;
-  const auto state = chess::StateFromFEN(kPosition3);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition3);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -199,8 +202,8 @@ TEST(Chess, PerftPosition3Depth1) {
 TEST(Chess, PerftPosition3Depth2) {
   constexpr auto kDepth = 2;
   constexpr auto kNodes = 191;
-  const auto state = chess::StateFromFEN(kPosition3);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition3);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -208,8 +211,8 @@ TEST(Chess, PerftPosition3Depth2) {
 TEST(Chess, PerftPosition3Depth3) {
   constexpr auto kDepth = 3;
   constexpr auto kNodes = 2812;
-  const auto state = chess::StateFromFEN(kPosition3);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition3);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -217,8 +220,8 @@ TEST(Chess, PerftPosition3Depth3) {
 TEST(Chess, PerftPosition3Depth4) {
   constexpr auto kDepth = 4;
   constexpr auto kNodes = 43238;
-  const auto state = chess::StateFromFEN(kPosition3);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition3);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -226,8 +229,8 @@ TEST(Chess, PerftPosition3Depth4) {
 TEST(Chess, PerftPosition3Depth5) {
   constexpr auto kDepth = 5;
   constexpr auto kNodes = 674624;
-  const auto state = chess::StateFromFEN(kPosition3);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition3);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -235,8 +238,8 @@ TEST(Chess, PerftPosition3Depth5) {
 TEST(Chess, PerftPosition3Depth6) {
   constexpr auto kDepth = 6;
   constexpr auto kNodes = 11030083;
-  const auto state = chess::StateFromFEN(kPosition3);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition3);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -244,8 +247,8 @@ TEST(Chess, PerftPosition3Depth6) {
 TEST(Chess, PerftPosition3Depth7) {
   constexpr auto kDepth = 7;
   constexpr auto kNodes = 178633661;
-  const auto state = chess::StateFromFEN(kPosition3);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition3);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -253,8 +256,8 @@ TEST(Chess, PerftPosition3Depth7) {
 TEST(Chess, DISABLED_PerftPosition3Depth8) {
   constexpr auto kDepth = 8;
   constexpr auto kNodes = 3009794393;
-  const auto state = chess::StateFromFEN(kPosition3);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition3);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -264,8 +267,8 @@ TEST(Chess, DISABLED_PerftPosition3Depth8) {
 TEST(Chess, PerftPosition4Depth1) {
   constexpr auto kDepth = 1;
   constexpr auto kNodes = 6;
-  const auto state = chess::StateFromFEN(kPosition4);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition4);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -273,8 +276,8 @@ TEST(Chess, PerftPosition4Depth1) {
 TEST(Chess, PerftPosition4Depth2) {
   constexpr auto kDepth = 2;
   constexpr auto kNodes = 264;
-  const auto state = chess::StateFromFEN(kPosition4);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition4);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -282,8 +285,8 @@ TEST(Chess, PerftPosition4Depth2) {
 TEST(Chess, PerftPosition4Depth3) {
   constexpr auto kDepth = 3;
   constexpr auto kNodes = 9467;
-  const auto state = chess::StateFromFEN(kPosition4);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition4);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -291,8 +294,8 @@ TEST(Chess, PerftPosition4Depth3) {
 TEST(Chess, PerftPosition4Depth4) {
   constexpr auto kDepth = 4;
   constexpr auto kNodes = 422333;
-  const auto state = chess::StateFromFEN(kPosition4);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition4);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -300,8 +303,8 @@ TEST(Chess, PerftPosition4Depth4) {
 TEST(Chess, PerftPosition4Depth5) {
   constexpr auto kDepth = 5;
   constexpr auto kNodes = 15833292;
-  const auto state = chess::StateFromFEN(kPosition4);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition4);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -309,8 +312,8 @@ TEST(Chess, PerftPosition4Depth5) {
 TEST(Chess, PerftPosition4Depth6) {
   constexpr auto kDepth = 6;
   constexpr auto kNodes = 706045033;
-  const auto state = chess::StateFromFEN(kPosition4);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition4);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -320,8 +323,8 @@ TEST(Chess, PerftPosition4Depth6) {
 TEST(Chess, PerftPosition5Depth1) {
   constexpr auto kDepth = 1;
   constexpr auto kNodes = 44;
-  const auto state = chess::StateFromFEN(kPosition5);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition5);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -329,8 +332,8 @@ TEST(Chess, PerftPosition5Depth1) {
 TEST(Chess, PerftPosition5Depth2) {
   constexpr auto kDepth = 2;
   constexpr auto kNodes = 1486;
-  const auto state = chess::StateFromFEN(kPosition5);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition5);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -338,8 +341,8 @@ TEST(Chess, PerftPosition5Depth2) {
 TEST(Chess, PerftPosition5Depth3) {
   constexpr auto kDepth = 3;
   constexpr auto kNodes = 62379;
-  const auto state = chess::StateFromFEN(kPosition5);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition5);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -347,8 +350,8 @@ TEST(Chess, PerftPosition5Depth3) {
 TEST(Chess, PerftPosition5Depth4) {
   constexpr auto kDepth = 4;
   constexpr auto kNodes = 2103487;
-  const auto state = chess::StateFromFEN(kPosition5);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition5);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -356,8 +359,8 @@ TEST(Chess, PerftPosition5Depth4) {
 TEST(Chess, PerftPosition5Depth5) {
   constexpr auto kDepth = 5;
   constexpr auto kNodes = 89941194;
-  const auto state = chess::StateFromFEN(kPosition5);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition5);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -367,8 +370,8 @@ TEST(Chess, PerftPosition5Depth5) {
 TEST(Chess, PerftPosition6Depth1) {
   constexpr auto kDepth = 1;
   constexpr auto kNodes = 46;
-  const auto state = chess::StateFromFEN(kPosition6);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition6);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -376,8 +379,8 @@ TEST(Chess, PerftPosition6Depth1) {
 TEST(Chess, PerftPosition6Depth2) {
   constexpr auto kDepth = 2;
   constexpr auto kNodes = 2079;
-  const auto state = chess::StateFromFEN(kPosition6);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition6);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -385,8 +388,8 @@ TEST(Chess, PerftPosition6Depth2) {
 TEST(Chess, PerftPosition6Depth3) {
   constexpr auto kDepth = 3;
   constexpr auto kNodes = 89890;
-  const auto state = chess::StateFromFEN(kPosition6);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition6);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -394,8 +397,8 @@ TEST(Chess, PerftPosition6Depth3) {
 TEST(Chess, PerftPosition6Depth4) {
   constexpr auto kDepth = 4;
   constexpr auto kNodes = 3894594;
-  const auto state = chess::StateFromFEN(kPosition6);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition6);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -403,8 +406,8 @@ TEST(Chess, PerftPosition6Depth4) {
 TEST(Chess, PerftPosition6Depth5) {
   constexpr auto kDepth = 5;
   constexpr auto kNodes = 164075551;
-  const auto state = chess::StateFromFEN(kPosition6);
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN(kPosition6);
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
 }
@@ -412,8 +415,16 @@ TEST(Chess, PerftPosition6Depth5) {
 TEST(Chess, PerftTwoKings) {
   constexpr auto kDepth = 6;
   constexpr auto kNodes = 903346;
-  const auto state = chess::StateFromFEN("8/3pp3/5k2/8/8/5K2/3PP3/8 w - - 0 1");
-  const auto result = chess::Perft(state, kDepth);
+  const auto state = StateFromFEN("8/3pp3/5k2/8/8/5K2/3PP3/8 w - - 0 1");
+  const auto result = Perft(state, kDepth);
 
   EXPECT_EQ(result, kNodes);
+}
+
+TEST(Chess, ZobristHashMove) {
+  auto state = StateFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+  auto hash1 = CalculateHash(state);
+  MakeMove(state, CreateMove(E2, E4));
+  auto hash2 = CalculateHash(state);
+  EXPECT_NE(hash1, hash2);
 }

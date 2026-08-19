@@ -6,8 +6,10 @@
 #include "chess/core/color.h"
 #include "chess/core/square.h"
 #include "chess/core/types.h"
+#include "chess/core/zobrist_hash.h"
 
 #include <array>
+#include <vector>
 
 namespace chess {
 
@@ -21,6 +23,8 @@ struct State {
   Color turn;
   Square enPassant;
   CastlingRightsMask castlingRightsMask;
+  Hash hash;
+  std::vector<Hash> history;
 };
 
 constexpr bool operator==(const State& state1, const State& state2) {
@@ -33,8 +37,8 @@ constexpr bool operator==(const State& state1, const State& state2) {
          state1.castlingRightsMask == state2.castlingRightsMask;
 }
 
-constexpr auto kNullState =
-    State{{}, {}, U16{0}, U16{0}, Color::kWhite, Square::kInvalid, CastlingRightsMask{0}};
+const auto kNullState = State{
+    {}, {}, U16{0}, U16{0}, Color::kWhite, Square::kInvalid, CastlingRightsMask{0}, Hash{0}};
 
 constexpr void FillBitboardsFromBoard(State& state) {
   state.bitboards = {};

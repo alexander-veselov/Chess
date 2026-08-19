@@ -10,7 +10,6 @@
 #include "chess/engine/engine.h"
 
 #include <random>
-#include <span>
 #include <string_view>
 #include <vector>
 
@@ -62,11 +61,11 @@ static void Perft(benchmark::State& state, std::string_view position, U32 depth)
 
 static void Engine(benchmark::State& state, std::string_view position, U32 depth) {
   const auto gameState = chess::StateFromFEN(position.data());
-  auto moves = std::span<const chess::Move>{};
+  auto searchInfo = chess::SearchInfo{};
   auto score = chess::Score{};
   for (auto _ : state) {
-    std::tie(moves, score) = chess::BestMove(gameState, depth);
-    benchmark::DoNotOptimize(moves);
+    searchInfo = chess::BestMove(gameState, {}, depth);
+    benchmark::DoNotOptimize(searchInfo);
   }
 }
 

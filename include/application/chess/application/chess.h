@@ -25,6 +25,8 @@ public:
 
 private:
   State state_;
+  Status status_;
+  bool isInCheck_;
   std::vector<Move> history_;
 };
 

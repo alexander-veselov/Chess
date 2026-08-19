@@ -3,6 +3,9 @@
 #include "chess/core/attacks.h"
 #include "chess/core/castling_rights.h"
 #include "chess/core/color.h"
+#include "chess/core/zobrist_hash.h"
+
+#include <unordered_map>
 
 namespace chess {
 
@@ -298,9 +301,34 @@ Status GetStatus(const State& state) {
     }
   }
 
+  if (Is50MoveRuleDraw(state)) {
+    return Status::kDraw;
+  }
+
+  if (IsThreefoldRepetition(state)) {
+    return Status::kDraw;
+  }
+
   // TODO: implement draw by repetition/insufficient material/etc
 
   return state.turn == Color::kWhite ? Status::kWhiteToMove : Status::kBlackToMove;
+}
+
+bool Is50MoveRuleDraw(const State& state) {
+  return state.halfmoveClock >= 100;
+}
+
+bool IsThreefoldRepetition(const State& state) {
+  // TODO: search only up to "irreversible" move
+  auto occurrences = 0;
+  for (auto it = state.history.rbegin() + 1; it != state.history.rend(); ++it) {
+    if (*it == state.hash) {
+      if (++occurrences >= 2) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 bool IsInCheck(const State& state, Color turn) {
@@ -332,7 +360,8 @@ void MakeMove(State& state, Move move) {
   state.board[to] = state.board[from];
   state.board[from] = Piece::kNone;
 
-  switch (GetType(move)) {
+  const auto moveType = GetType(move);
+  switch (moveType) {
   case MoveType::kEnPassant:
     if (state.turn == Color::kWhite) {
       const auto captureSquare = static_cast<Square>(state.enPassant - 8);
@@ -396,10 +425,13 @@ void MakeMove(State& state, Move move) {
   state.enPassant = EvaluateEnPassant(from, to, fromPiece);
   UpdateCastlingState(state, from, to, GetBasePiece(fromPiece), GetBasePiece(toPiece));
 
-  const auto resetClock = GetBasePiece(fromPiece) == BasePiece::kPawn || toPiece != Piece::kNone;
+  const auto resetClock = GetBasePiece(fromPiece) == BasePiece::kPawn || toPiece != Piece::kNone ||
+                          moveType == MoveType::kEnPassant;
   state.halfmoveClock = resetClock ? 0 : state.halfmoveClock + 1;
   state.fullmoveNumber += state.turn == Color::kBlack ? 1 : 0;
   state.turn = FlipColor(state.turn);
+  state.hash = CalculateHash(state); // TODO: don't calculate cache from scratch
+  state.history.push_back(state.hash);
 }
 
 } // namespace chess

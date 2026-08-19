@@ -14,9 +14,9 @@ TEST(Chess, EngineMateIn2_1) {
     if (IsGameOver(status)) {
       break;
     }
-    const auto [moves, score] = chess::BestMove(state, kDepth);
-    ASSERT_FALSE(moves.empty());
-    chess::MakeMove(state, moves[0]);
+    const auto searchInfo = chess::BestMove(state, {}, kDepth);
+    ASSERT_FALSE(searchInfo.line.empty());
+    chess::MakeMove(state, searchInfo.line[0]);
   }
   EXPECT_EQ(status, chess::Status::kWhiteWon);
 }
@@ -30,9 +30,9 @@ TEST(Chess, EngineMateIn2_2) {
     if (IsGameOver(status)) {
       break;
     }
-    const auto [moves, score] = chess::BestMove(state, kDepth);
-    ASSERT_FALSE(moves.empty());
-    chess::MakeMove(state, moves[0]);
+    const auto searchInfo = chess::BestMove(state, {}, kDepth);
+    ASSERT_FALSE(searchInfo.line.empty());
+    chess::MakeMove(state, searchInfo.line[0]);
   }
   EXPECT_EQ(status, chess::Status::kWhiteWon);
 }

@@ -7,10 +7,10 @@
 namespace chess {
 
 enum CastlingRight : U8 {
-  kWhiteKingSide  = 1 << 0,
-  kWhiteQueenSide = 1 << 1,
-  kBlackKingSide  = 1 << 2,
-  kBlackQueenSide = 1 << 3
+  kWhiteKingSide    = 1 << 0,
+  kWhiteQueenSide   = 1 << 1,
+  kBlackKingSide    = 1 << 2,
+  kBlackQueenSide   = 1 << 3,
 };
 
 using CastlingRightsMask = U8;

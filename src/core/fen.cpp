@@ -107,6 +107,8 @@ bool ParseFEN(std::string_view fen, State& state) {
   state.fullmoveNumber = std::atoi(fen.data() + characterIndex);
 
   FillBitboardsFromBoard(state);
+  state.hash = CalculateHash(state);
+  state.history = {state.hash};
 
   return true;
 }

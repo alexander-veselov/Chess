@@ -44,7 +44,7 @@ void EvaluationBarPanel::OnUIRender(const Analysis& analysis, bool flipBoard) {
     return;
   }
 
-  const auto evaluation = analysis.GetEvaluation();
+  const auto evaluation = analysis.GetSearchInfo().score;
 
   const auto currentPlayerBarSize = EvaluationToBarSize(evaluation, panelSize.y);
   const auto oppositePlayerBarSize = panelSize.y - currentPlayerBarSize;

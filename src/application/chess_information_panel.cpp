@@ -9,7 +9,7 @@
 namespace chess {
 namespace {
 
-std::string MovesToString(const std::span<const Move> moves) {
+std::string MovesToString(const std::vector<Move>& moves) {
   if (moves.empty()) {
     return {};
   }
@@ -40,7 +40,13 @@ void ChessInformationPanel::OnUIRender(Chess& chess, Analysis& analysis) {
                             ImGuiInputTextFlags_::ImGuiInputTextFlags_ReadOnly |
                             ImGuiInputTextFlags_::ImGuiInputTextFlags_WordWrap);
 
-  analysisLine_ = MovesToString(analysis.GetLine());
+  // TODO: draw properly
+  const auto searchInfo = analysis.GetSearchInfo();
+  analysisLine_ = std::string{};
+  analysisLine_ += "Depth: " + std::to_string(searchInfo.depth) + "\n";
+  analysisLine_ += "Nodes: " + std::to_string(searchInfo.nodes) + "\n";
+  analysisLine_ += "Nodes/s: " + std::to_string(searchInfo.nodesPerSecond) + "\n";
+  analysisLine_ += "Moves: " + MovesToString(searchInfo.line);
   const auto analysisLineSize = ImGui::GetContentRegionAvail();
   ImGui::InputTextMultiline("##analysisLine", analysisLine_.data(), analysisLine_.capacity(), analysisLineSize,
                             ImGuiInputTextFlags_::ImGuiInputTextFlags_ReadOnly |

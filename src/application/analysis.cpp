@@ -1,52 +1,58 @@
 #include "chess/application/analysis.h"
 
-#include "chess/engine/engine.h"
-
 namespace chess {
+namespace {
+constexpr auto kMaxDepth = 100;
+}
 
 Analysis::Analysis()
-  : line_{},
-    evaluation_{0},
+  : searchInfo_{},
+    searchInfoMutex_{},
     lastState_{kNullState},
-    enabled_{false} {
+    enabled_{false},
+    searchStart_{} {
 }
 
 void Analysis::SetEnabled(bool enabled) {
   enabled_ = enabled;
-}
-
-bool Analysis::IsReady() const {
-  return future_.valid() ? future_.wait_for(std::chrono::seconds(0)) == std::future_status::ready : true;
+  if (enabled_ == false) {
+    searchThread_.request_stop();
+  }
 }
 
 bool Analysis::GetEnabled() const {
   return enabled_;
 }
 
-Score Analysis::GetEvaluation() const {
-  return evaluation_;
+SearchInfo Analysis::GetSearchInfo() const {
+  auto lock = std::lock_guard<std::mutex>(searchInfoMutex_);
+  return searchInfo_;
 }
 
-std::span<const Move> Analysis::GetLine() const {
-  return line_;
+std::chrono::steady_clock::duration Analysis::GetSearchDuration() const {
+  auto lock = std::lock_guard<std::mutex>(searchInfoMutex_);
+  return std::chrono::steady_clock::now() - searchStart_;
+}
+
+void Analysis::SetSearchInfo(const SearchInfo& info) {
+  auto lock = std::lock_guard<std::mutex>(searchInfoMutex_);
+  searchInfo_ = info;
 }
 
 void Analysis::Update(const State& state) {
-  if (!enabled_) {
-    return;
-  }
-  if (future_.valid()) {
-    if (IsReady()) {
-      std::tie(line_, evaluation_) = future_.get();
-    } else {
-      return;
-    }
-  }
-  if (state == lastState_) {
+  if (!enabled_ || state == lastState_) {
     return;
   }
   lastState_ = state;
-  future_ = std::async(std::launch::async, [state] { return BestMove(state); });
+  if (searchThread_.joinable()) {
+    searchThread_.request_stop();
+    searchThread_.join();
+  }
+  SetSearchInfo(SearchInfo{});
+  searchStart_ = std::chrono::steady_clock::now();
+  searchThread_ = std::jthread([state, this](std::stop_token stopToken) {
+    BestMove(state, kMaxDepth, [this](const auto& info) { SetSearchInfo(info); }, stopToken);
+  });
 }
 
 } // namespace chess
