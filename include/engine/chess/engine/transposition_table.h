@@ -7,6 +7,7 @@
 #include "chess/engine/score.h"
 
 #include <array>
+#include <optional>
 
 namespace chess {
 
@@ -27,12 +28,12 @@ struct TTEntry {
 class TranspositionTable {
 public:
   TranspositionTable();
-  bool GetEntry(Hash hash, TTEntry& entry) const;
-  bool ProbeHash(Hash hash, U32 ply, U32 depth, Score alpha, Score beta, TTEntry& entry) const;
-  void RecordHash(Hash hash, U32 ply, U32 depth, Score score, TTEntryType type, Move move);
+  TTEntry const* GetEntry(Hash hash) const;
+  std::optional<Score> Probe(TTEntry const* entry, U32 ply, U32 depth, Score alpha, Score beta) const;
+  void Record(Hash hash, U32 ply, U32 depth, Score score, TTEntryType type, Move move);
 
 private:
-  constexpr static auto kSize = 1ULL << 25; 
+  constexpr static auto kSize = 1ULL << 25;
   std::array<TTEntry, kSize> table_;
 };
 

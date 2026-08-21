@@ -127,15 +127,16 @@ Score EvaluateState(const State& state) {
   return state.turn == Color::kWhite ? score : -score;
 }
 
-void OrderMoves(const State& state, Move ttMove, Moves& moves, bool shuffle=false) {
+void OrderMoves(const State& state, Moves& moves, TTEntry const* ttEntry = nullptr,
+                bool shuffle = false) {
   if (moves.empty()) {
     return;
   }
   if (shuffle) {
     std::shuffle(moves.begin(), moves.end(), GetRNG());
   }
-  if (ttMove != kInvalidMove) {
-    auto it = std::find(moves.begin(), moves.end(), ttMove);
+  if (ttEntry) {
+    auto it = std::find(moves.begin(), moves.end(), ttEntry->move);
     if (it != moves.end()) {
       std::swap(*moves.begin(), *it);
     }
@@ -150,9 +151,9 @@ Score Quiesce(const State& state, Score alpha, Score beta, U32 ply, U64& nodes,
 
   ++nodes;
 
-  auto ttEntry = TTEntry{};
-  if (transpotisionTable.ProbeHash(state.hash, ply, 0, alpha, beta, ttEntry)) {
-    return ttEntry.score;
+  const auto* ttEntry = transpotisionTable.GetEntry(state.hash);
+  if (const auto ttScore = transpotisionTable.Probe(ttEntry, ply, 0, alpha, beta)) {
+    return ttScore.value();
   }
 
   auto moves = Moves{};
@@ -162,15 +163,15 @@ Score Quiesce(const State& state, Score alpha, Score beta, U32 ply, U64& nodes,
     GetLegalMoves(state, moves);
     if (moves.empty()) {
       const auto value = MatedIn(ply);
-      transpotisionTable.RecordHash(state.hash, ply, 0, value, TTEntryType::kExact, kInvalidMove);
+      transpotisionTable.Record(state.hash, ply, 0, value, TTEntryType::kExact, kInvalidMove);
       return value;
     }
   } else {
     const auto staticEval = EvaluateState(state);
     bestValue = staticEval;
     if (bestValue >= beta) {
-      transpotisionTable.RecordHash(state.hash, ply, 0, bestValue, TTEntryType::kLowerBound,
-                                    kInvalidMove);
+      transpotisionTable.Record(state.hash, ply, 0, bestValue, TTEntryType::kLowerBound,
+                                kInvalidMove);
       return bestValue;
     }
     if (bestValue > alpha) {
@@ -179,7 +180,7 @@ Score Quiesce(const State& state, Score alpha, Score beta, U32 ply, U64& nodes,
     GetCaptures(state, moves); // TODO: add promotions
   }
 
-  OrderMoves(state, ttEntry.move, moves);
+  OrderMoves(state, moves, ttEntry);
 
   auto bestMove = kInvalidMove;
   auto ttEntryType = TTEntryType::kUpperBound;
@@ -202,7 +203,7 @@ Score Quiesce(const State& state, Score alpha, Score beta, U32 ply, U64& nodes,
     }
   }
 
-  transpotisionTable.RecordHash(state.hash, ply, 0, bestValue, ttEntryType, bestMove);
+  transpotisionTable.Record(state.hash, ply, 0, bestValue, ttEntryType, bestMove);
 
   return bestValue;
 }
@@ -227,13 +228,12 @@ Score Negamax(const State& state, Score alpha, Score beta, U32 ply, U32 depth, U
     return kDrawScore;
   }
 
-  auto ttEntry = TTEntry{};
-  if (transpotisionTable.ProbeHash(state.hash, ply, depth, alpha, beta, ttEntry)) {
-    // TODO: fix threefold repetition bug
-    if (ttEntry.type == TTEntryType::kExact) {
-      pvTable.Update(ply, depth, ttEntry.move);
+  const auto* ttEntry = transpotisionTable.GetEntry(state.hash);
+  if (const auto ttScore = transpotisionTable.Probe(ttEntry, ply, depth, alpha, beta)) {
+    if (ttEntry && ttEntry->type == TTEntryType::kExact) {
+      pvTable.Update(ply, depth, ttEntry->move);
     }
-    return ttEntry.score;
+    return ttScore.value(); // TODO: fix threefold repetition bug
   }
 
   auto moves = Moves{};
@@ -246,7 +246,7 @@ Score Negamax(const State& state, Score alpha, Score beta, U32 ply, U32 depth, U
     }
   }
 
-  OrderMoves(state, ttEntry.move, moves);
+  OrderMoves(state, moves, ttEntry);
 
   auto bestValue = Score(-kInfinity);
   auto bestMove = moves[0];
@@ -273,7 +273,7 @@ Score Negamax(const State& state, Score alpha, Score beta, U32 ply, U32 depth, U
   }
 
   if (!stopToken.stop_requested()) {
-    transpotisionTable.RecordHash(state.hash, ply, depth, bestValue, ttEntryType, bestMove);
+    transpotisionTable.Record(state.hash, ply, depth, bestValue, ttEntryType, bestMove);
   }
 
   return bestValue;
@@ -289,7 +289,7 @@ void RecostructFullLine(std::vector<Move>& moves, U32 depth, const State& state,
       return;
     }
     auto entry = TTEntry{};
-    if (!tt.GetEntry(currentState.hash, entry) || entry.move == kInvalidMove) {
+    if (!tt.GetEntry(currentState.hash) || entry.move == kInvalidMove) {
       return;
     }
     MakeMove(currentState, entry.move); // TODO: check if move is valid
