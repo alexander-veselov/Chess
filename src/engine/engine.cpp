@@ -145,19 +145,32 @@ void OrderMoves(const State& state, Move ttMove, Moves& moves, bool shuffle=fals
   });
 }
 
-Score Quiesce(const State& state, Score alpha, Score beta, U32 ply) {
+Score Quiesce(const State& state, Score alpha, Score beta, U32 ply, U64& nodes,
+              TranspositionTable& transpotisionTable) {
+
+  ++nodes;
+
+  auto ttEntry = TTEntry{};
+  if (transpotisionTable.ProbeHash(state.hash, ply, 0, alpha, beta, ttEntry)) {
+    return ttEntry.score;
+  }
+
   auto moves = Moves{};
   auto bestValue = Score{};
   if (IsInCheck(state, state.turn)) {
     bestValue = Score(-kInfinity);
     GetLegalMoves(state, moves);
     if (moves.empty()) {
-      return MatedIn(ply);
+      const auto value = MatedIn(ply);
+      transpotisionTable.RecordHash(state.hash, ply, 0, value, TTEntryType::kExact, kInvalidMove);
+      return value;
     }
   } else {
     const auto staticEval = EvaluateState(state);
     bestValue = staticEval;
     if (bestValue >= beta) {
+      transpotisionTable.RecordHash(state.hash, ply, 0, bestValue, TTEntryType::kLowerBound,
+                                    kInvalidMove);
       return bestValue;
     }
     if (bestValue > alpha) {
@@ -165,21 +178,32 @@ Score Quiesce(const State& state, Score alpha, Score beta, U32 ply) {
     }
     GetCaptures(state, moves); // TODO: add promotions
   }
-  OrderMoves(state, kInvalidMove, moves);
+
+  OrderMoves(state, ttEntry.move, moves);
+
+  auto bestMove = kInvalidMove;
+  auto ttEntryType = TTEntryType::kUpperBound;
   for (const auto& move : moves) {
     auto childState = State{state};
     MakeMove(childState, move);
-    const auto score = -Quiesce(childState, -beta, -alpha, ply + 1);
-    if (score >= beta) {
-      return score;
+
+    const auto value = -Quiesce(childState, -beta, -alpha, ply + 1, nodes, transpotisionTable);
+    if (value > bestValue) {
+      bestValue = value;
+      bestMove = move;
     }
-    if (score > bestValue) {
-      bestValue = score;
+    if (value > alpha) {
+      alpha = value;
+      ttEntryType = TTEntryType::kExact;
     }
-    if (score > alpha) {
-      alpha = score;
+    if (alpha >= beta) {
+      ttEntryType = TTEntryType::kLowerBound;
+      break;
     }
   }
+
+  transpotisionTable.RecordHash(state.hash, ply, 0, bestValue, ttEntryType, bestMove);
+
   return bestValue;
 }
 
@@ -192,7 +216,7 @@ Score Negamax(const State& state, Score alpha, Score beta, U32 ply, U32 depth, U
   ++nodes;
 
   if (depth == 0) {
-    return Quiesce(state, alpha, beta, ply);
+    return Quiesce(state, alpha, beta, ply, nodes, transpotisionTable);
   }
 
   if (Is50MoveRuleDraw(state)) {
