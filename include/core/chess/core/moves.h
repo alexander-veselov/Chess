@@ -19,6 +19,7 @@ public:
   Moves& operator=(const Moves& moves) = default;
 
   Move operator[](size_t index) const;
+  Move& operator[](size_t index);
 
   size_t size() const;
   bool empty() const;

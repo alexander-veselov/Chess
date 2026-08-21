@@ -4,54 +4,15 @@
 #include "chess/core/bits.h"
 #include "chess/core/game.h"
 #include "chess/core/random.h"
+#include "chess/engine/move_picker.h"
+#include "chess/engine/piece_values.h"
 #include "chess/engine/pv_table.h"
 #include "chess/engine/transposition_table.h"
 
-#include <algorithm>
-#include <array>
 #include <chrono>
 
 namespace chess {
 namespace {
-
-constexpr auto kPieceValues = [] {
-  std::array<Score, kPieceCount> values{};
-  values[kNone]         =    0;
-  values[kWhiteKing]    =    0;
-  values[kWhiteQueen]   = +900;
-  values[kWhiteRook]    = +500;
-  values[kWhiteBishop]  = +325;
-  values[kWhiteKnight]  = +310;
-  values[kWhitePawn]    = +100;
-  values[kBlackKing]    =    0;
-  values[kBlackQueen]   = -900;
-  values[kBlackRook]    = -500;
-  values[kBlackBishop]  = -325;
-  values[kBlackKnight]  = -310;
-  values[kBlackPawn]    = -100;
-  return values;
-}();
-
-constexpr auto kBasePieceCount = static_cast<size_t>(BasePiece::kBasePieceCount);
-constexpr auto kMvvLva = [] {
-  auto table = std::array<std::array<Score, kBasePieceCount>, kBasePieceCount>{};
-  for (auto attacker = 0; attacker < kBasePieceCount; ++attacker) {
-    for (auto victim = 0; victim < kBasePieceCount; ++victim) {
-      const auto victimPiece = static_cast<BasePiece>(victim);
-      if (victimPiece == BasePiece::kNone || victimPiece == BasePiece::kKing) {
-        continue;
-      }
-      table[attacker][victim] = kPieceValues[victim] * 10 - kPieceValues[attacker];
-    }
-  }
-  return table;
-}();
-
-Score MvvLva(const Board& board, Move move) {
-  const auto fromPiece = GetBasePiece(board[GetFrom(move)]);
-  const auto toPiece = GetBasePiece(board[GetTo(move)]);
-  return kMvvLva[static_cast<size_t>(fromPiece)][static_cast<size_t>(toPiece)];
-}
 
 Bitboard GetPiecesOfColor(const State& state, Color color) {
   auto pieces = Bitboard{};
@@ -127,25 +88,6 @@ Score EvaluateState(const State& state) {
   return state.turn == Color::kWhite ? score : -score;
 }
 
-void OrderMoves(const State& state, Moves& moves, TTEntry const* ttEntry = nullptr,
-                bool shuffle = false) {
-  if (moves.empty()) {
-    return;
-  }
-  if (shuffle) {
-    std::shuffle(moves.begin(), moves.end(), GetRNG());
-  }
-  if (ttEntry) {
-    auto it = std::find(moves.begin(), moves.end(), ttEntry->move);
-    if (it != moves.end()) {
-      std::swap(*moves.begin(), *it);
-    }
-  }
-  std::sort(moves.begin() + 1, moves.end(), [&state](Move move1, Move move2) {
-    return MvvLva(state.board, move1) > MvvLva(state.board, move2);
-  });
-}
-
 Score Quiesce(const State& state, Score alpha, Score beta, U32 ply, U64& nodes,
               TranspositionTable& transpotisionTable) {
 
@@ -180,11 +122,12 @@ Score Quiesce(const State& state, Score alpha, Score beta, U32 ply, U64& nodes,
     GetCaptures(state, moves); // TODO: add promotions
   }
 
-  OrderMoves(state, moves, ttEntry);
-
   auto bestMove = kInvalidMove;
   auto ttEntryType = TTEntryType::kUpperBound;
-  for (const auto& move : moves) {
+  auto ttMove = ttEntry ? ttEntry->move : kInvalidMove;
+  auto movePicker = MovePicker{moves, state.board, ttMove};
+  for (auto i = movePicker.Next(); i < moves.size(); i = movePicker.Next()) {
+    const auto move = moves[i];
     auto childState = State{state};
     MakeMove(childState, move);
 
@@ -246,12 +189,14 @@ Score Negamax(const State& state, Score alpha, Score beta, U32 ply, U32 depth, U
     }
   }
 
-  OrderMoves(state, moves, ttEntry);
-
   auto bestValue = Score(-kInfinity);
   auto bestMove = moves[0];
   auto ttEntryType = TTEntryType::kUpperBound;
-  for (const auto& move : moves) {
+
+  auto ttMove = ttEntry ? ttEntry->move : kInvalidMove;
+  auto movePicker = MovePicker{moves, state.board, ttMove};
+  for (auto i = movePicker.Next(); i < moves.size(); i = movePicker.Next()) {
+    const auto move = moves[i];
     auto childState = State{state};
     MakeMove(childState, move);
 

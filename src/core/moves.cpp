@@ -8,6 +8,10 @@ Move Moves::operator[](size_t index) const {
   return moves_[index];
 }
 
+Move& Moves::operator[](size_t index) {
+  return moves_[index];
+}
+
 void Moves::push_back(Move move) {
   assert(moveCount_ < kMaxMoves);
   moves_[moveCount_++] = move;
