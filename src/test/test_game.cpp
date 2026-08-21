@@ -421,10 +421,54 @@ TEST(Chess, PerftTwoKings) {
   EXPECT_EQ(result, kNodes);
 }
 
-TEST(Chess, ZobristHashMove) {
-  auto state = StateFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-  auto hash1 = CalculateHash(state);
-  MakeMove(state, CreateMove(E2, E4));
-  auto hash2 = CalculateHash(state);
-  EXPECT_NE(hash1, hash2);
+TEST(Chess, ZobristHashMovePiece) {
+  auto state = StateFromFEN(kPosition1);
+  const auto originalHash = state.hash;
+  MakeMove(state, CreateMove(G1, F3));
+  const auto newHash = state.hash;
+  EXPECT_NE(originalHash, newHash);
+  MakeMove(state, CreateMove(F3, G1));
+  const auto backwardsHash = state.hash;
+  EXPECT_EQ(originalHash, backwardsHash);
+}
+
+static bool TestZobristHash(std::string_view fen, U32 depth) {
+  const auto state = StateFromFEN(fen);
+  auto success = true;
+  const auto result = PerftF(state, depth, [&success](const State& state, Move move) {
+    const auto hash = CalculateHash(state);
+    if (state.hash != hash) {
+      std::cout << "Hash mismatch!\n";
+      std::cout << "Incremental: " << state.hash << '\n';
+      std::cout << "Calculated:  " << hash << '\n';
+      std::cout << "FEN: " << StateToFEN(state) << '\n';
+      std::cout << "Move: " << MoveToString(move) << '\n';
+      success = false;
+    }
+  });
+  return success;
+}
+
+TEST(Chess, ZobristHashPosition1) {
+  EXPECT_TRUE(TestZobristHash(kPosition1, 6));
+}
+
+TEST(Chess, ZobristHashPosition2) {
+  EXPECT_TRUE(TestZobristHash(kPosition2, 5));
+}
+
+TEST(Chess, ZobristHashPosition3) {
+  EXPECT_TRUE(TestZobristHash(kPosition3, 7));
+}
+
+TEST(Chess, ZobristHashPosition4) {
+  EXPECT_TRUE(TestZobristHash(kPosition4, 5));
+}
+
+TEST(Chess, ZobristHashPosition5) {
+  EXPECT_TRUE(TestZobristHash(kPosition5, 5));
+}
+
+TEST(Chess, ZobristHashPosition6) {
+  EXPECT_TRUE(TestZobristHash(kPosition6, 5));
 }

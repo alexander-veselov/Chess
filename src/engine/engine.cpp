@@ -127,7 +127,7 @@ Score EvaluateState(const State& state) {
   return state.turn == Color::kWhite ? score : -score;
 }
 
-void OrderMoves(const State& state, Move ttMove, Moves& moves, bool shuffle=true) {
+void OrderMoves(const State& state, Move ttMove, Moves& moves, bool shuffle=false) {
   if (moves.empty()) {
     return;
   }

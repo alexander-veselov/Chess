@@ -26,8 +26,7 @@ void AutoPilot::Update(const State& state, const Analysis& analysis) {
   if (searchInfo.hash != 0 && searchInfo.hash != state.hash) {
     std::cout << "AutoPilot error" << std::endl;
   }
-  if (searchDuration > std::chrono::milliseconds(300)) {
-  //if (searchInfo.depth >= 6) {
+  if (searchDuration > std::chrono::milliseconds(300) || searchInfo.depth >= 6) {
     if (!searchInfo.line.empty()) {
       std::cout << searchInfo.hash << " " << searchInfo.depth << std::endl;
       pendingMove_ = searchInfo.line[0];

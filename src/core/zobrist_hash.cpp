@@ -36,7 +36,7 @@ public:
       hash ^= enPassantHash_[GetFile(state.enPassant)];
     }
     hash ^= castlingRightsMaskHash_[state.castlingRightsMask];
-    for (auto pieceIndex = 0; pieceIndex < kPieceCount; ++pieceIndex) {
+    for (auto pieceIndex = 1; pieceIndex < kPieceCount; ++pieceIndex) {
       auto bitboard = state.bitboards[pieceIndex];
       while (bitboard) {
         const auto square = PopLSB(bitboard);
@@ -44,6 +44,22 @@ public:
       }
     }
     return hash;
+  }
+
+  void UpdatePiece(Hash& hash, Square square, Piece piece) const {
+    hash ^= boardHash_[square][piece];
+  }
+
+  void UpdateTurn(Hash& hash) const {
+    hash ^= turnHash_;
+  }
+
+  void UpdateCastlingRights(Hash& hash, CastlingRightsMask mask) const {
+    hash ^= castlingRightsMaskHash_[mask];
+  }
+
+  void UpdateEnPassant(Hash& hash, File file) const {
+    hash ^= enPassantHash_[file];
   }
 
 private:
@@ -57,6 +73,22 @@ private:
 
 Hash CalculateHash(const State& state) {
   return g_ZobristHash.CalculateHash(state);
+}
+
+void UpdatePiece(Hash& hash, Square square, Piece piece) {
+  g_ZobristHash.UpdatePiece(hash, square, piece);
+}
+
+void UpdateTurn(Hash& hash) {
+  g_ZobristHash.UpdateTurn(hash);
+}
+
+void UpdateCastlingRights(Hash& hash, CastlingRightsMask mask) {
+  g_ZobristHash.UpdateCastlingRights(hash, mask);
+}
+
+void UpdateEnPassant(Hash& hash, File file) {
+  g_ZobristHash.UpdateEnPassant(hash, file);
 }
 
 } // namespace chess

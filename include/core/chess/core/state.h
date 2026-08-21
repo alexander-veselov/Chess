@@ -24,7 +24,7 @@ struct State {
   Square enPassant;
   CastlingRightsMask castlingRightsMask;
   Hash hash;
-  std::vector<Hash> history;
+  std::vector<Hash> history; // TODO: replace vector
 };
 
 constexpr bool operator==(const State& state1, const State& state2) {

@@ -64,7 +64,7 @@ static void Engine(benchmark::State& state, std::string_view position, U32 depth
   auto searchInfo = chess::SearchInfo{};
   auto score = chess::Score{};
   for (auto _ : state) {
-    searchInfo = chess::BestMove(gameState, {}, depth);
+    searchInfo = chess::BestMove(gameState, depth);
     benchmark::DoNotOptimize(searchInfo);
   }
 }

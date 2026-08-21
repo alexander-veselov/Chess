@@ -25,6 +25,25 @@ U64 Perft(const State& state, I32 depth) {
   return nodes;
 }
 
+U64 PerftF(const State& state, I32 depth, std::function<void(const State&, Move)> f) {
+  auto moves = Moves{};
+  GetLegalMoves(state, moves);
+
+  if (depth == 1) {
+    return moves.size();
+  }
+
+  auto nodes = U64{0};
+  for (const auto& move : moves) {
+    auto newState = State{state};
+    MakeMove(newState, move);
+    f(newState, move);
+    nodes += PerftF(newState, depth - 1, f);
+  }
+
+  return nodes;
+}
+
 std::map<std::string, U64> Divide(const State& state, I32 depth) {
   auto result = std::map<std::string, U64>{};
 

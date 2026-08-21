@@ -14,7 +14,7 @@ TEST(Chess, EngineMateIn2_1) {
     if (IsGameOver(status)) {
       break;
     }
-    const auto searchInfo = chess::BestMove(state, {}, kDepth);
+    const auto searchInfo = chess::BestMove(state, kDepth);
     ASSERT_FALSE(searchInfo.line.empty());
     chess::MakeMove(state, searchInfo.line[0]);
   }
@@ -30,7 +30,7 @@ TEST(Chess, EngineMateIn2_2) {
     if (IsGameOver(status)) {
       break;
     }
-    const auto searchInfo = chess::BestMove(state, {}, kDepth);
+    const auto searchInfo = chess::BestMove(state, kDepth);
     ASSERT_FALSE(searchInfo.line.empty());
     chess::MakeMove(state, searchInfo.line[0]);
   }
