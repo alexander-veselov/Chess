@@ -37,18 +37,23 @@ Score ScoreMove(const Board& board, Move ttMove, Move move) {
 
 MovePicker::MovePicker(Moves& moves, const Board& board, Move ttMove)
   : moves_{moves},
-    board_{board},
-    ttMove_{ttMove},
     next_{0} {
+  for (auto i = 0; i < moves_.size(); ++i) {
+    scores_.push_back(ScoreMove(board, ttMove, moves[i]));
+  }
 }
 
 size_t MovePicker::Next() {
+  if (next_ >= moves_.size()) {
+    return next_;
+  }
   auto best = next_;
   for (auto i = next_ + 1; i < moves_.size(); ++i) {
-    if (ScoreMove(board_, ttMove_, moves_[i]) > ScoreMove(board_, ttMove_, moves_[best])) {
+    if (scores_[i] > scores_[best]) {
       best = i;
     }
   }
+  std::swap(scores_[next_], scores_[best]);
   std::swap(moves_[next_], moves_[best]);
   return next_++;
 }
