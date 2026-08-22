@@ -1,9 +1,9 @@
 #pragma once
 
+#include "chess/core/hash.h"
 #include "chess/core/move.h"
 #include "chess/core/state.h"
 #include "chess/core/types.h"
-#include "chess/core/zobrist_hash.h"
 #include "chess/engine/score.h"
 
 #include <array>
@@ -18,7 +18,7 @@ enum class TTEntryType {
 };
 
 struct TTEntry {
-  U64 hash;
+  Hash hash;
   U32 depth;
   Score score;
   TTEntryType type;

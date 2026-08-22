@@ -1,7 +1,7 @@
 #pragma once
 
+#include "chess/core/hash.h"
 #include "chess/core/move.h"
-#include "chess/core/zobrist_hash.h"
 
 #include <optional>
 

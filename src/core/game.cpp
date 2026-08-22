@@ -319,7 +319,6 @@ bool Is50MoveRuleDraw(const State& state) {
 }
 
 bool IsThreefoldRepetition(const State& state) {
-  // TODO: search only up to "irreversible" move
   auto occurrences = 0;
   for (auto it = state.history.rbegin() + 1; it != state.history.rend(); ++it) {
     if (*it == state.hash) {
@@ -356,7 +355,7 @@ void MakeMove(State& state, Move move) {
   const auto to = GetTo(move);
   const auto fromPiece = state.board[from];
   const auto toPiece = state.board[to];
-  
+
   state.board[to] = fromPiece;
   state.board[from] = Piece::kNone;
   UpdatePiece(state.hash, from, fromPiece);
@@ -453,6 +452,8 @@ void MakeMove(State& state, Move move) {
   if (state.enPassant != Square::kInvalid) {
     UpdateEnPassant(state.hash, GetFile(state.enPassant));
   }
+
+  const auto oldCastlingRights = state.castlingRightsMask;
   UpdateCastlingRights(state.hash, state.castlingRightsMask);
   UpdateCastlingState(state, from, to, GetBasePiece(fromPiece), GetBasePiece(toPiece));
   UpdateCastlingRights(state.hash, state.castlingRightsMask);
@@ -465,6 +466,12 @@ void MakeMove(State& state, Move move) {
   state.turn = FlipColor(state.turn);
   UpdateTurn(state.hash);
 
+  const auto irreversible = GetBasePiece(fromPiece) == BasePiece::kPawn ||
+                            toPiece != Piece::kNone ||
+                            state.castlingRightsMask != oldCastlingRights;
+  if (irreversible) {
+    state.history.clear();
+  }
   state.history.push_back(state.hash);
 }
 

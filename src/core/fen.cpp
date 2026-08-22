@@ -4,6 +4,7 @@
 #include "chess/core/game.h"
 #include "chess/core/piece.h"
 #include "chess/core/square.h"
+#include "chess/core/zobrist_hash.h"
 
 namespace chess {
 namespace {

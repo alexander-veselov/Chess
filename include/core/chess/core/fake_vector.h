@@ -2,15 +2,11 @@
 
 #include <array>
 #include <assert.h>
+#include <initializer_list>
 
 namespace chess {
 
 template <typename T, size_t MaxSize> class FakeVector {
-private:
-  using Data = std::array<T, MaxSize>;
-  Data data_ = {};
-  size_t size_ = 0ULL;
-
 public:
   constexpr static auto max_size = MaxSize;
 
@@ -18,6 +14,12 @@ public:
   FakeVector(const FakeVector& other) = default;
   FakeVector& operator=(const FakeVector& other) = default;
 
+  FakeVector(std::initializer_list<T> values) {
+    assert(values.size() <= MaxSize);
+    for (const auto& value : values) {
+      data_[size_++] = value;
+    }
+  }
 
   T operator[](size_t index) const {
     return data_[index];
@@ -36,17 +38,33 @@ public:
     return size_;
   }
 
+  void clear() {
+    size_ = 0ULL;
+  }
+
   bool empty() const {
     return size_ == 0ULL;
   }
 
-  Data::iterator begin() {
+  auto begin() {
     return data_.begin();
   }
 
-  Data::iterator end() {
+  auto end() {
     return data_.begin() + size_;
   }
+
+  auto rbegin() const {
+    return data_.rbegin() + (MaxSize - size_);
+  }
+
+  auto rend() const {
+    return data_.rbegin() + MaxSize;
+  }
+
+private:
+  std::array<T, MaxSize> data_ = {};
+  size_t size_ = 0ULL;
 };
 
 } // namespace chess
