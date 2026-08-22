@@ -109,7 +109,7 @@ bool ParseFEN(std::string_view fen, State& state) {
 
   FillBitboardsFromBoard(state);
   state.hash = CalculateHash(state);
-  state.history = {state.hash};
+  state.history.push_back(state.hash);
 
   return true;
 }

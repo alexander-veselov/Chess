@@ -41,7 +41,7 @@ constexpr bool operator==(const State& state1, const State& state2) {
          state1.history == state2.history;
 }
 
-constexpr auto kNullState =
+const auto kNullState =
     State{Board{}, {}, U16{0}, U16{0}, Color::kWhite, Square::kInvalid, CastlingRightsMask{0}, Hash{0}, History{}};
 
 constexpr void FillBitboardsFromBoard(State& state) {
