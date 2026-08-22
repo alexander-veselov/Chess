@@ -5,6 +5,6 @@
 
 namespace chess {
 
-using History = FakeVector<Hash, 128>;
+using History = FakeVector<Hash, 1024>; // TODO: improve, remove 1024
 
 } // namespace chess

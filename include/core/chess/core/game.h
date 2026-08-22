@@ -17,7 +17,6 @@ struct Undo {
   Square enPassant;
   CastlingRightsMask castlingRightsMask;
   Hash hash;
-  History history; // TODO: optimize
 };
 
 Status GetStatus(const State& state);

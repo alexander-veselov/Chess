@@ -50,13 +50,11 @@ U64 PerftFInternal(State& state, I32 depth, std::function<void(const State&, Mov
 } // namespace
 
 U64 Perft(const State& state, I32 depth) {
-  auto copy = State{state};
-  return PerftInternal(copy, depth);
+  return PerftInternal(const_cast<State&>(state), depth);
 }
 
 U64 PerftF(const State& state, I32 depth, std::function<void(const State&, Move)> f) {
-  auto copy = State{state};
-  return PerftFInternal(copy, depth, f);
+  return PerftFInternal(const_cast<State&>(state), depth, f);
 }
 
 std::map<std::string, U64> Divide(const State& state, I32 depth) {

@@ -366,7 +366,6 @@ void MakeMove(State& state, Move move, Undo& undo) {
   undo.enPassant = state.enPassant;
   undo.castlingRightsMask = state.castlingRightsMask;
   undo.hash = state.hash;
-  undo.history = state.history;
 
   state.board[to] = fromPiece;
   state.board[from] = Piece::kNone;
@@ -478,12 +477,13 @@ void MakeMove(State& state, Move move, Undo& undo) {
   state.turn = FlipColor(state.turn);
   UpdateTurn(state.hash);
 
-  const auto irreversible = GetBasePiece(fromPiece) == BasePiece::kPawn ||
-                            toPiece != Piece::kNone ||
-                            state.castlingRightsMask != oldCastlingRights;
-  if (irreversible) {
-    state.history.clear();
-  }
+  // TODO: implement
+  // const auto irreversible = GetBasePiece(fromPiece) == BasePiece::kPawn ||
+  //                           toPiece != Piece::kNone ||
+  //                           state.castlingRightsMask != oldCastlingRights;
+  // if (irreversible) {
+  //   state.history.clear();
+  // }
   state.history.push_back(state.hash);
 }
 
@@ -504,7 +504,7 @@ void UndoMove(State& state, Move move, const Undo& undo) {
   const auto toPiece = state.board[to];
   state.board[from] = undo.fromPiece;
   state.board[to] = undo.toPiece;
-  state.history = undo.history;
+  state.history.pop_back();
 
   const auto moveType = GetType(move);
   switch (moveType) {
