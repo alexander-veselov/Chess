@@ -29,6 +29,21 @@ public:
     return data_[index];
   }
 
+  bool operator==(const FakeVector<T, MaxSize>& other) const {
+    return size_ == other.size_ &&
+           std::equal(data_.begin(), data_.begin() + size_, other.data_.begin());
+  }
+
+  void resize(size_t size) {
+    assert(size >= 0 && size < MaxSize);
+    size_ = size;
+  }
+
+  void pop_back() {
+    assert(size_ > 0);
+    --size_;
+  }
+
   void push_back(T value) {
     assert(size_ < MaxSize);
     data_[size_++] = value;

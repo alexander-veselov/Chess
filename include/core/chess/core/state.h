@@ -36,7 +36,9 @@ constexpr bool operator==(const State& state1, const State& state2) {
          state1.fullmoveNumber == state2.fullmoveNumber &&
          state1.turn == state2.turn &&
          state1.enPassant == state2.enPassant &&
-         state1.castlingRightsMask == state2.castlingRightsMask;
+         state1.castlingRightsMask == state2.castlingRightsMask && 
+         state1.hash == state2.hash &&
+         state1.history == state2.history;
 }
 
 constexpr auto kNullState =

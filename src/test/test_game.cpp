@@ -472,3 +472,70 @@ TEST(Chess, ZobristHashPosition5) {
 TEST(Chess, ZobristHashPosition6) {
   EXPECT_TRUE(TestZobristHash(kPosition6, 5));
 }
+
+static bool TestUndo(State& state, I32 depth) {
+  auto moves = Moves{};
+  GetLegalMoves(state, moves);
+
+  if (depth == 1) {
+    return true;
+  }
+
+  auto nodes = U64{0};
+  for (const auto& move : moves) {
+    auto expectedState = State{state};
+    auto undo = Undo{};
+    MakeMove(state, move, undo);
+    nodes += TestUndo(state, depth - 1);
+    UndoMove(state, move, undo);
+    if (state != expectedState) {
+      std::cout << "Expected: " << StateToFEN(expectedState) << '\n';
+      std::cout << "Actual:   " << StateToFEN(state) << '\n';
+      return false;
+    }
+  }
+
+  return true;
+}
+
+TEST(Chess, UndoPosition1) {
+  const auto expectedState = StateFromFEN(kPosition1);
+  auto actualState = State{expectedState};
+  EXPECT_TRUE(TestUndo(actualState, 6));
+  EXPECT_EQ(expectedState, actualState);
+}
+
+TEST(Chess, UndoPosition2) {
+  const auto expectedState = StateFromFEN(kPosition2);
+  auto actualState = State{expectedState};
+  EXPECT_TRUE(TestUndo(actualState, 5));
+  EXPECT_EQ(expectedState, actualState);
+}
+
+TEST(Chess, UndoPosition3) {
+  const auto expectedState = StateFromFEN(kPosition3);
+  auto actualState = State{expectedState};
+  EXPECT_TRUE(TestUndo(actualState, 7));
+  EXPECT_EQ(expectedState, actualState);
+}
+
+TEST(Chess, UndoPosition4) {
+  const auto expectedState = StateFromFEN(kPosition4);
+  auto actualState = State{expectedState};
+  EXPECT_TRUE(TestUndo(actualState, 5));
+  EXPECT_EQ(expectedState, actualState);
+}
+
+TEST(Chess, UndoPosition5) {
+  const auto expectedState = StateFromFEN(kPosition5);
+  auto actualState = State{expectedState};
+  EXPECT_TRUE(TestUndo(actualState, 5));
+  EXPECT_EQ(expectedState, actualState);
+}
+
+TEST(Chess, UndoPosition6) {
+  const auto expectedState = StateFromFEN(kPosition6);
+  auto actualState = State{expectedState};
+  EXPECT_TRUE(TestUndo(actualState, 5));
+  EXPECT_EQ(expectedState, actualState);
+}

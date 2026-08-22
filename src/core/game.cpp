@@ -251,7 +251,7 @@ bool IsPotentiallyPinned(Bitboard bishopAttacks, Bitboard rookAttacks, bool hasD
          hasOrthogonalPin && (rookAttacks & bitboard);
 }
 
-void GetMoves(const State& state, Bitboard mask, Moves& legalMoves) {
+void GetMoves(State& state, Bitboard mask, Moves& legalMoves) {
   auto moves = Moves{};
   GetQueenMoves (state, mask, state.bitboards[MakePiece(state.turn, BasePiece::kQueen )], moves);
   GetPawnMoves  (state, mask, state.bitboards[MakePiece(state.turn, BasePiece::kPawn  )], moves);
@@ -278,11 +278,13 @@ void GetMoves(const State& state, Bitboard mask, Moves& legalMoves) {
     if (isInCheck || GetBasePiece(state.board[from]) == BasePiece::kKing ||
         GetType(move) == MoveType::kEnPassant ||
         IsPotentiallyPinned(bishopAttacks, rookAttacks, hasDiagonalPin, hasOrthogonalPin, from)) {
-      auto newState = State{state};
-      MakeMove(newState, move);
-      if (!IsInCheck(newState, state.turn)) {
+      auto undo = Undo{};
+      auto currentTurn = state.turn;
+      MakeMove(state, move, undo);
+      if (!IsInCheck(state, currentTurn)) {
         legalMoves.push_back(move);
       }
+      UndoMove(state, move, undo);
     } else {
       legalMoves.push_back(move);
     }
@@ -341,20 +343,30 @@ bool IsInCheck(const State& state, Color turn) {
 
 void GetLegalMoves(const State& state, Moves& legalMoves) {
   const auto mask = ~GetPiecesOfColor(state, state.turn);
-  return GetMoves(state, mask, legalMoves);
+  return GetMoves(const_cast<State&>(state), mask, legalMoves);
 }
 
 void GetCaptures(const State& state, Moves& legalMoves) {
   // TODO: fix pawns, check other types
   const auto mask = GetPiecesOfColor(state, FlipColor(state.turn));
-  return GetMoves(state, mask, legalMoves);
+  return GetMoves(const_cast<State&>(state), mask, legalMoves);
 }
 
-void MakeMove(State& state, Move move) {
+void MakeMove(State& state, Move move, Undo& undo) {
   const auto from = GetFrom(move);
   const auto to = GetTo(move);
   const auto fromPiece = state.board[from];
   const auto toPiece = state.board[to];
+
+  undo.fromPiece = fromPiece;
+  undo.toPiece = toPiece;
+  undo.halfmoveClock = state.halfmoveClock;
+  undo.fullmoveNumber = state.fullmoveNumber;
+  undo.turn = state.turn;
+  undo.enPassant = state.enPassant;
+  undo.castlingRightsMask = state.castlingRightsMask;
+  undo.hash = state.hash;
+  undo.history = state.history;
 
   state.board[to] = fromPiece;
   state.board[from] = Piece::kNone;
@@ -473,6 +485,76 @@ void MakeMove(State& state, Move move) {
     state.history.clear();
   }
   state.history.push_back(state.hash);
+}
+
+void MakeMove(State& state, Move move) {
+  auto undo = Undo{};
+  MakeMove(state, move, undo);
+}
+
+void UndoMove(State& state, Move move, const Undo& undo) {
+  state.halfmoveClock = undo.halfmoveClock;
+  state.fullmoveNumber = undo.fullmoveNumber;
+  state.turn = undo.turn;
+  state.enPassant = undo.enPassant;
+  state.castlingRightsMask = undo.castlingRightsMask;
+  state.hash = undo.hash;
+  const auto from = GetFrom(move);
+  const auto to = GetTo(move);
+  const auto toPiece = state.board[to];
+  state.board[from] = undo.fromPiece;
+  state.board[to] = undo.toPiece;
+  state.history = undo.history;
+
+  const auto moveType = GetType(move);
+  switch (moveType) {
+  case MoveType::kEnPassant:
+    if (state.turn == Color::kWhite) {
+      const auto captureSquare = static_cast<Square>(state.enPassant - 8);
+      state.board[captureSquare] = Piece::kBlackPawn;
+      state.bitboards[kBlackPawn] ^= BBFromSquare(captureSquare);
+      state.bitboards[kNone] ^= BBFromSquare(captureSquare);
+    } else if (state.turn == Color::kBlack) {
+      const auto captureSquare = static_cast<Square>(state.enPassant + 8);
+      state.board[captureSquare] = Piece::kWhitePawn;
+      state.bitboards[kWhitePawn] ^= BBFromSquare(captureSquare);
+      state.bitboards[kNone] ^= BBFromSquare(captureSquare);
+    }
+    break;
+  case MoveType::kKingCastle:
+    switch (to) {
+    case G1:
+      std::swap(state.board[H1], state.board[F1]);
+      state.bitboards[kWhiteRook] ^= BBFromSquare(H1) | BBFromSquare(F1);
+      state.bitboards[kNone] ^= BBFromSquare(H1) | BBFromSquare(F1);
+      break;
+    case G8:
+      std::swap(state.board[H8], state.board[F8]);
+      state.bitboards[kBlackRook] ^= BBFromSquare(H8) | BBFromSquare(F8);
+      state.bitboards[kNone] ^= BBFromSquare(H8) | BBFromSquare(F8);
+      break;
+    }
+    break;
+  case MoveType::kQueenCastle:
+    switch (to) {
+    case C1:
+      std::swap(state.board[A1], state.board[D1]);
+      state.bitboards[kWhiteRook] ^= BBFromSquare(A1) | BBFromSquare(D1);
+      state.bitboards[kNone] ^= BBFromSquare(A1) | BBFromSquare(D1);
+      break;
+    case C8:
+      std::swap(state.board[A8], state.board[D8]);
+      state.bitboards[kBlackRook] ^= BBFromSquare(A8) | BBFromSquare(D8);
+      state.bitboards[kNone] ^= BBFromSquare(A8) | BBFromSquare(D8);
+      break;
+    }
+    break;
+  }
+
+  state.bitboards[Piece::kNone] ^= BBFromSquare(from);
+  state.bitboards[undo.fromPiece] ^= BBFromSquare(from);
+  state.bitboards[undo.toPiece] ^= BBFromSquare(to);
+  state.bitboards[toPiece] ^= BBFromSquare(to);
 }
 
 } // namespace chess

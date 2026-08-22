@@ -6,8 +6,9 @@
 #include "chess/core/move.h"
 
 namespace chess {
+namespace {
 
-U64 Perft(const State& state, I32 depth) {
+U64 PerftInternal(State& state, I32 depth) {
   auto moves = Moves{};
   GetLegalMoves(state, moves);
 
@@ -17,15 +18,16 @@ U64 Perft(const State& state, I32 depth) {
 
   auto nodes = U64{0};
   for (const auto& move : moves) {
-    auto newState = State{state};
-    MakeMove(newState, move);
-    nodes += Perft(newState, depth - 1);
+    auto undo = Undo{};
+    MakeMove(state, move, undo);
+    nodes += PerftInternal(state, depth - 1);
+    UndoMove(state, move, undo);
   }
 
   return nodes;
 }
 
-U64 PerftF(const State& state, I32 depth, std::function<void(const State&, Move)> f) {
+U64 PerftFInternal(State& state, I32 depth, std::function<void(const State&, Move)> f) {
   auto moves = Moves{};
   GetLegalMoves(state, moves);
 
@@ -35,13 +37,26 @@ U64 PerftF(const State& state, I32 depth, std::function<void(const State&, Move)
 
   auto nodes = U64{0};
   for (const auto& move : moves) {
-    auto newState = State{state};
-    MakeMove(newState, move);
-    f(newState, move);
-    nodes += PerftF(newState, depth - 1, f);
+    auto undo = Undo{};
+    MakeMove(state, move, undo);
+    f(state, move);
+    nodes += PerftFInternal(state, depth - 1, f);
+    UndoMove(state, move, undo);
   }
 
   return nodes;
+}
+
+} // namespace
+
+U64 Perft(const State& state, I32 depth) {
+  auto copy = State{state};
+  return PerftInternal(copy, depth);
+}
+
+U64 PerftF(const State& state, I32 depth, std::function<void(const State&, Move)> f) {
+  auto copy = State{state};
+  return PerftFInternal(copy, depth, f);
 }
 
 std::map<std::string, U64> Divide(const State& state, I32 depth) {

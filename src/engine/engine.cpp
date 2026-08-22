@@ -88,13 +88,13 @@ Score EvaluateState(const State& state) {
   return state.turn == Color::kWhite ? score : -score;
 }
 
-Score Quiesce(const State& state, Score alpha, Score beta, U32 ply, U64& nodes,
-              TranspositionTable& transpotisionTable) {
+Score Quiesce(State& state, Score alpha, Score beta, U32 ply, U64& nodes,
+              TranspositionTable& tt) {
 
   ++nodes;
 
-  const auto* ttEntry = transpotisionTable.GetEntry(state.hash);
-  if (const auto ttScore = transpotisionTable.Probe(ttEntry, ply, 0, alpha, beta)) {
+  const auto* ttEntry = tt.GetEntry(state.hash);
+  if (const auto ttScore = tt.Probe(ttEntry, ply, 0, alpha, beta)) {
     return ttScore.value();
   }
 
@@ -105,14 +105,14 @@ Score Quiesce(const State& state, Score alpha, Score beta, U32 ply, U64& nodes,
     GetLegalMoves(state, moves);
     if (moves.empty()) {
       const auto value = MatedIn(ply);
-      transpotisionTable.Record(state.hash, ply, 0, value, TTEntryType::kExact, kInvalidMove);
+      tt.Record(state.hash, ply, 0, value, TTEntryType::kExact, kInvalidMove);
       return value;
     }
   } else {
     const auto staticEval = EvaluateState(state);
     bestValue = staticEval;
     if (bestValue >= beta) {
-      transpotisionTable.Record(state.hash, ply, 0, bestValue, TTEntryType::kLowerBound,
+      tt.Record(state.hash, ply, 0, bestValue, TTEntryType::kLowerBound,
                                 kInvalidMove);
       return bestValue;
     }
@@ -128,10 +128,12 @@ Score Quiesce(const State& state, Score alpha, Score beta, U32 ply, U64& nodes,
   auto movePicker = MovePicker{moves, state.board, ttMove};
   for (auto i = movePicker.Next(); i < moves.size(); i = movePicker.Next()) {
     const auto move = moves[i];
-    auto childState = State{state};
-    MakeMove(childState, move);
 
-    const auto value = -Quiesce(childState, -beta, -alpha, ply + 1, nodes, transpotisionTable);
+    auto undo = Undo{};
+    MakeMove(state, move, undo);
+    const auto value = -Quiesce(state, -beta, -alpha, ply + 1, nodes, tt);
+    UndoMove(state, move, undo);
+
     if (value > bestValue) {
       bestValue = value;
       bestMove = move;
@@ -146,13 +148,13 @@ Score Quiesce(const State& state, Score alpha, Score beta, U32 ply, U64& nodes,
     }
   }
 
-  transpotisionTable.Record(state.hash, ply, 0, bestValue, ttEntryType, bestMove);
+  tt.Record(state.hash, ply, 0, bestValue, ttEntryType, bestMove);
 
   return bestValue;
 }
 
-Score Negamax(const State& state, Score alpha, Score beta, U32 ply, U32 depth, U64& nodes,
-              TranspositionTable& transpotisionTable, PVTable& pvTable, std::stop_token stopToken) {
+Score Negamax(State& state, Score alpha, Score beta, U32 ply, U32 depth, U64& nodes,
+              TranspositionTable& tt, PVTable& pvTable, std::stop_token stopToken) {
   if (stopToken.stop_requested()) {
     return 0;
   }
@@ -160,7 +162,7 @@ Score Negamax(const State& state, Score alpha, Score beta, U32 ply, U32 depth, U
   ++nodes;
 
   if (depth == 0) {
-    return Quiesce(state, alpha, beta, ply, nodes, transpotisionTable);
+    return Quiesce(state, alpha, beta, ply, nodes, tt);
   }
 
   if (Is50MoveRuleDraw(state)) {
@@ -171,8 +173,8 @@ Score Negamax(const State& state, Score alpha, Score beta, U32 ply, U32 depth, U
     return kDrawScore;
   }
 
-  const auto* ttEntry = transpotisionTable.GetEntry(state.hash);
-  if (const auto ttScore = transpotisionTable.Probe(ttEntry, ply, depth, alpha, beta)) {
+  const auto* ttEntry = tt.GetEntry(state.hash);
+  if (const auto ttScore = tt.Probe(ttEntry, ply, depth, alpha, beta)) {
     if (ttEntry && ttEntry->type == TTEntryType::kExact) {
       pvTable.Update(ply, depth, ttEntry->move);
     }
@@ -197,11 +199,12 @@ Score Negamax(const State& state, Score alpha, Score beta, U32 ply, U32 depth, U
   auto movePicker = MovePicker{moves, state.board, ttMove};
   for (auto i = movePicker.Next(); i < moves.size(); i = movePicker.Next()) {
     const auto move = moves[i];
-    auto childState = State{state};
-    MakeMove(childState, move);
 
-    const auto value = -Negamax(childState, -beta, -alpha, ply + 1, depth - 1, nodes,
-                                transpotisionTable, pvTable, stopToken);
+    auto undo = Undo{};
+    MakeMove(state, move, undo);
+    const auto value = -Negamax(state, -beta, -alpha, ply + 1, depth - 1, nodes, tt, pvTable, stopToken);
+    UndoMove(state, move, undo);
+
     if (value > bestValue) {
       bestValue = value;
       bestMove = move;
@@ -218,7 +221,7 @@ Score Negamax(const State& state, Score alpha, Score beta, U32 ply, U32 depth, U
   }
 
   if (!stopToken.stop_requested()) {
-    transpotisionTable.Record(state.hash, ply, depth, bestValue, ttEntryType, bestMove);
+    tt.Record(state.hash, ply, depth, bestValue, ttEntryType, bestMove);
   }
 
   return bestValue;
@@ -250,10 +253,11 @@ SearchInfo BestMove(const State& state, U32 maxDepth, SearchInfoCallback callbac
   auto start = std::chrono::steady_clock::now();
   auto nodes = U64{0};
   auto searchInfo = SearchInfo{};
+  auto stateCopy = State{state};
   for (auto depth = 1; depth <= maxDepth; ++depth) {
     auto pvTable = PVTable{};
-    const auto score = Negamax(state, -kInfinity, kInfinity, 0, depth, nodes, transpotisionTable,
-                               pvTable, stopToken);
+    const auto score = Negamax(stateCopy, -kInfinity, kInfinity, 0, depth, nodes,
+                               transpotisionTable, pvTable, stopToken);
     if (stopToken.stop_requested()) {
       break;
     }
